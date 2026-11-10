@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Code ta carte</title>
+<title>Pimp My Page</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
@@ -337,7 +337,7 @@
 <div class="app">
   <header class="topbar">
     <div class="brand">
-      <strong>&lt;/&gt; Code ta carte</strong>
+      <strong>&lt;/&gt; Pimp My Page</strong>
       <span class="kicker">futur-en-tous-genres · atelier dev frontend</span>
     </div>
     <nav class="dots" id="dots" aria-label="Missions"></nav>
@@ -371,7 +371,7 @@
         <span class="kicker">ça se met à jour quand tu tapes</span>
       </div>
       <div class="browser">
-        <div class="browser-bar"><i></i><i></i><i></i><div class="url">www.ma-carte.ch</div></div>
+        <div class="browser-bar"><i></i><i></i><i></i><div class="url">www.ma-page.ch</div></div>
         <iframe id="preview" title="Aperçu de ta carte"></iframe>
       </div>
     </section>
@@ -414,7 +414,7 @@
 <div class="stage" id="stage">
   <button class="btn close" id="btnStageClose">✕ Fermer</button>
   <div class="browser">
-    <div class="browser-bar"><i></i><i></i><i></i><div class="url">www.ma-carte.ch</div></div>
+    <div class="browser-bar"><i></i><i></i><i></i><div class="url">www.ma-page.ch</div></div>
     <iframe id="stageFrame" title="Ta carte en grand"></iframe>
   </div>
 </div>
@@ -656,7 +656,7 @@ h1 {
 /* =========================================================
    État + sauvegarde
    ========================================================= */
-const KEY = "code-ta-carte:v1";
+const KEY = "pimp-my-page:v1";
 const store = {
   load() { try { return JSON.parse(localStorage.getItem(KEY)) || null; } catch { return null; } },
   save(s) { try { localStorage.setItem(KEY, JSON.stringify(s)); } catch {} },

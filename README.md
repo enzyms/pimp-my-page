@@ -1,4 +1,4 @@
-# Code ta carte
+# Pimp My Page
 
 Plateforme d'initiation HTML/CSS pour l'atelier « dev frontend » de Futur en tous genres (12.11.2026), 90 minutes, filles de 13–14 ans.
 
