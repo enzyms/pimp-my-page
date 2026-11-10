@@ -9,7 +9,7 @@ Chaque participante code sa carte de profil en 10 missions guidées (validation 
 - Un seul fichier, `index.html`, sans build ni dépendance à installer.
 - Le travail est sauvegardé dans le `localStorage` du navigateur.
 - **📱 Sur mon natel** : le code est compressé dans le lien (`#c=…`). Aucun serveur, aucun compte, aucune donnée stockée. Le site doit donc rester en ligne à la même adresse pour que les QR codes continuent de marcher.
-- **🖼️ Images** : galerie de photos Unsplash et de stickers OpenMoji, toutes vérifiées.
+- **🖼️ Images** : galerie de 20 photos et 12 stickers hébergés dans `img/`, insérés au curseur.
 - **CodePen ↗** ouvre le code dans CodePen, pré-rempli, sans compte.
 
 ## En local
@@ -23,3 +23,10 @@ Puis ouvrir http://localhost:8765.
 ## Avant l'atelier
 
 Remettre un laptop à zéro : ouvrir l'adresse du site avec `#reset` à la fin.
+
+## Crédits images
+
+- Photos (`img/*.jpg`) : [Unsplash](https://unsplash.com), licence Unsplash.
+- Stickers (`img/stickers/*.svg`) : [OpenMoji](https://openmoji.org), licence CC BY-SA 4.0.
+
+Les images sont servies par le site lui-même, pour que la galerie marche même sur un réseau qui bloque les sites externes.

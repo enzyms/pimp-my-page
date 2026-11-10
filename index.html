@@ -447,23 +447,22 @@ img {
 `;
 
 /* =========================================================
-   Galerie d'images testées (Unsplash autorise l'affichage direct)
+   Galerie d'images, servies par le site lui-même (dossier img/)
+   → aucune dépendance externe, marche même si un réseau bloque Unsplash.
+   Adresse absolue : le lien partagé sur le natel pointe vers le site en ligne.
+   Photos : Unsplash (licence Unsplash) · Stickers : OpenMoji (CC BY-SA 4.0)
    ========================================================= */
-const PHOTO = id => `https://images.unsplash.com/photo-${id}?w=600&h=400&fit=crop`;
+const asset = path => new URL(path, location.href).href;
 const PHOTOS = [
-  ["chat", "1514888286974-6c03e2ca1dba"], ["chien", "1543466835-00a7907e9de1"], ["lapin", "1585110396000-c9ffd4e4b308"],
-  ["panda", "1564349683136-77e08dba1ef7"], ["cheval", "1553284965-83fd3e82fa5a"], ["pizza", "1513104890138-7c749659a591"],
-  ["donut", "1551024601-bec78aea704b"], ["volley", "1612872087720-bb876e2e67d1"], ["basket", "1546519638-68e109498ffc"],
-  ["foot", "1574629810360-7efbbe195018"], ["skate", "1520045892732-304bc3ac5d8e"], ["danse", "1508700929628-666bc8bd84ea"],
-  ["musique", "1511379938547-c1f69419868d"], ["jeux vidéo", "1606144042614-b2417e99c4e3"], ["livres", "1512820790803-83ca734da794"],
-  ["montagne", "1464822759023-fed622ff2c3b"], ["plage", "1507525428034-b723cf961d3e"], ["ville", "1477959858617-67f85cf4f1df"],
-  ["fleurs", "1490750967868-88aa4486c946"], ["espace", "1446776811953-b23d57bd21aa"],
-].map(([alt, id]) => ({ alt, src: PHOTO(id) }));
-const STICKER = hex => `https://cdn.jsdelivr.net/npm/openmoji@15.1.0/color/svg/${hex}.svg`;
+  ["chat", "chat"], ["chien", "chien"], ["lapin", "lapin"], ["panda", "panda"], ["cheval", "cheval"],
+  ["pizza", "pizza"], ["donut", "donut"], ["volley", "volley"], ["basket", "basket"], ["foot", "foot"],
+  ["skate", "skate"], ["danse", "danse"], ["musique", "musique"], ["jeux vidéo", "jeux-video"], ["livres", "livres"],
+  ["montagne", "montagne"], ["plage", "plage"], ["ville", "ville"], ["fleurs", "fleurs"], ["espace", "espace"],
+].map(([alt, file]) => ({ alt, src: asset(`img/${file}.jpg`) }));
 const STICKERS = [
-  ["chat", "1F431"], ["licorne", "1F984"], ["étoile", "2B50"], ["cœur", "2764"], ["fusée", "1F680"], ["arc-en-ciel", "1F308"],
-  ["volley", "1F3D0"], ["ballon de foot", "26BD"], ["pizza", "1F355"], ["note de musique", "1F3B5"], ["feu", "1F525"], ["manette", "1F3AE"],
-].map(([alt, hex]) => ({ alt, src: STICKER(hex) }));
+  ["chat", "chat"], ["licorne", "licorne"], ["étoile", "etoile"], ["cœur", "coeur"], ["fusée", "fusee"], ["arc-en-ciel", "arc-en-ciel"],
+  ["volley", "volley"], ["ballon de foot", "foot"], ["pizza", "pizza"], ["note de musique", "musique"], ["feu", "feu"], ["manette", "manette"],
+].map(([alt, file]) => ({ alt, src: asset(`img/stickers/${file}.svg`) }));
 
 /* =========================================================
    Missions
