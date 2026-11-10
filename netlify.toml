@@ -1,0 +1,14 @@
+# Site statique : un seul fichier, aucun build.
+[build]
+  publish = "."
+  command = ""
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    # Toujours servir la dernière version (on corrige parfois juste avant l'atelier)
+    Cache-Control = "public, max-age=0, must-revalidate"
+    # Pas de Content-Security-Policy : l'aperçu (iframe srcdoc) en hérite,
+    # et les participantes doivent pouvoir charger images et polices de n'importe où.

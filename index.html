@@ -1,0 +1,1093 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Code ta carte</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #EBE9E6;
+    --paper: #FFFFFF;
+    --soft: #F2F0EC;
+    --ink: #141414;
+    --muted: #5E5B57;
+    --red: #E8432E;
+    --red-dark: #C9321F;
+    --yellow: #FFC72C;
+    --peach: #F6E3CB;
+    --blue: #CFE2F5;
+    --lilac: #E3DDF5;
+    --sage: #DFE8D3;
+    --green: #2F9E5B;
+    --radius-xl: 28px;
+    --radius-l: 18px;
+    --radius-m: 12px;
+    --line: 2.5px solid var(--ink);
+    --pop: 6px 6px 0 var(--ink);
+    --font: "Schibsted Grotesk", "Helvetica Neue", Arial, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font);
+    font-size: 16px;
+    line-height: 1.45;
+  }
+  button { font: inherit; color: inherit; cursor: pointer; }
+
+  /* ---------- Layout ---------- */
+  .app {
+    height: 100%;
+    display: grid;
+    grid-template-rows: auto 1fr;
+    gap: 16px;
+    padding: 16px;
+  }
+  .topbar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: var(--paper);
+    border-radius: var(--radius-xl);
+    padding: 12px 14px 12px 24px;
+  }
+  .brand { display: flex; align-items: baseline; gap: 14px; }
+  .brand strong { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; }
+  .kicker { font-size: 13px; color: var(--muted); }
+  .kicker::before { content: "// "; color: var(--red); }
+  .dots { display: flex; gap: 6px; margin-left: auto; flex-wrap: wrap; }
+  .dot {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    border: 2px solid var(--ink);
+    background: var(--paper);
+    font-size: 13px; font-weight: 700;
+    display: grid; place-items: center;
+    transition: transform .15s;
+  }
+  .dot:hover { transform: translateY(-2px); }
+  .dot.done { background: var(--sage); }
+  .dot.current { background: var(--yellow); box-shadow: 3px 3px 0 var(--ink); }
+  .dot.bonus { border-style: dashed; }
+  .actions { display: flex; gap: 8px; }
+
+  .btn {
+    border: 0;
+    border-radius: 999px;
+    padding: 10px 18px;
+    font-weight: 700;
+    background: var(--soft);
+    white-space: nowrap;
+    transition: transform .12s, background .12s;
+  }
+  .btn:hover { transform: translateY(-1px); background: #E6E3DE; }
+  .btn.primary { background: var(--red); color: #fff; }
+  .btn.primary:hover { background: var(--red-dark); }
+  .btn.small { padding: 6px 12px; font-size: 13px; }
+
+  .main {
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(300px, 360px) 1fr 1fr;
+    gap: 16px;
+  }
+  .panel {
+    background: var(--paper);
+    border-radius: var(--radius-xl);
+    padding: 20px;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ---------- Mission ---------- */
+  .mission { overflow: auto; gap: 14px; }
+  .mission-hero {
+    border-radius: var(--radius-l);
+    padding: 18px 18px 16px;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .mission-hero .emoji { font-size: 40px; line-height: 1; }
+  .mission-hero h2 { margin: 6px 0 0; font-size: 26px; line-height: 1.1; letter-spacing: -0.02em; }
+  .mission-hero .tag { font-size: 13px; color: var(--ink); opacity: .7; }
+  .mission p { margin: 0; }
+  .mission .intro { font-size: 16px; }
+  .mission .intro code, .checks code, .tip code {
+    font-family: var(--mono); font-size: .88em;
+    background: var(--soft); padding: 1px 6px; border-radius: 6px;
+  }
+  .snippet {
+    position: relative;
+    background: var(--soft);
+    border-radius: var(--radius-m);
+    padding: 46px 14px 14px 16px;
+    font-family: var(--mono);
+    font-size: 13.5px;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .snippet .copy { position: absolute; top: 8px; right: 8px; background: var(--paper); }
+  .label { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+  .checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+  .checks li {
+    display: flex; gap: 10px; align-items: flex-start;
+    padding: 9px 12px;
+    border-radius: var(--radius-m);
+    background: var(--soft);
+    font-size: 15px;
+    transition: background .2s;
+  }
+  .checks li .ico { flex: none; width: 22px; text-align: center; }
+  .checks li.ok { background: var(--sage); }
+  .tip { background: var(--blue); border-radius: var(--radius-m); padding: 12px 14px; font-size: 14.5px; }
+  .tip b { display: block; margin-bottom: 2px; }
+  details.help summary { cursor: pointer; font-weight: 700; color: var(--red); list-style: none; }
+  details.help summary::-webkit-details-marker { display: none; }
+  details.help[open] summary { margin-bottom: 8px; }
+  .nav { display: flex; gap: 8px; margin-top: auto; padding-top: 6px; }
+  .nav .btn.primary { margin-left: auto; }
+  .nav .btn.primary[disabled] { background: #D8D4CE; color: #8a857e; cursor: not-allowed; transform: none; }
+
+  /* ---------- Editor ---------- */
+  .editor { gap: 12px; }
+  .tabs { display: flex; gap: 8px; align-items: center; }
+  .tab {
+    border: 2px solid transparent;
+    border-radius: 999px;
+    padding: 7px 16px;
+    font-weight: 700;
+    background: var(--soft);
+  }
+  .tab small { font-weight: 500; opacity: .7; }
+  .tab[aria-selected="true"] { border-color: var(--ink); box-shadow: 3px 3px 0 var(--ink); }
+  .tab[data-tab="html"][aria-selected="true"] { background: var(--peach); }
+  .tab[data-tab="css"][aria-selected="true"] { background: var(--lilac); }
+  .tab .ping {
+    display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+    background: var(--red); margin-left: 6px; vertical-align: middle;
+    visibility: hidden;
+  }
+  .tab.hint .ping { visibility: visible; }
+  .tabs .saved { margin-left: auto; font-size: 13px; color: var(--muted); }
+  .checks .why { display: block; margin-top: 4px; font-size: 13.5px; color: var(--red-dark); }
+  .checks .why[hidden] { display: none; }
+
+  /* ---------- Galerie d'images ---------- */
+  .modal-card.wide { width: min(760px, 100%); }
+  .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 10px; }
+  .gallery.stickers { grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); }
+  .pick {
+    border: 2px solid transparent; border-radius: var(--radius-m);
+    background: var(--soft); padding: 0; overflow: hidden;
+    display: flex; flex-direction: column; text-align: left;
+    transition: transform .12s, border-color .12s;
+  }
+  .pick:hover, .pick:focus-visible { transform: translateY(-2px) rotate(-1deg); border-color: var(--ink); box-shadow: 3px 3px 0 var(--ink); outline: none; }
+  .pick img { width: 100%; aspect-ratio: 3 / 2; object-fit: cover; display: block; }
+  .stickers .pick img { aspect-ratio: 1; object-fit: contain; padding: 8px; }
+  .pick span { font-size: 13px; font-weight: 700; padding: 5px 8px 7px; }
+  .stickers .pick span { display: none; }
+  .code-wrap {
+    flex: 1; min-height: 0;
+    display: flex;
+    border-radius: var(--radius-l);
+    background: var(--soft);
+    overflow: hidden;
+  }
+  .gutter {
+    padding: 16px 8px 16px 12px;
+    font-family: var(--mono); font-size: 15px; line-height: 1.6;
+    color: #A9A39B; text-align: right;
+    user-select: none;
+    overflow: hidden;
+    white-space: pre;
+  }
+  textarea.code {
+    flex: 1;
+    border: 0; outline: 0; resize: none;
+    background: transparent;
+    padding: 16px 16px 16px 6px;
+    font-family: var(--mono); font-size: 15px; line-height: 1.6;
+    color: var(--ink);
+    tab-size: 2;
+    white-space: pre;
+    overflow: auto;
+  }
+  textarea.code[hidden] { display: none; }
+
+  /* ---------- Preview (browser window) ---------- */
+  .preview { padding: 22px 26px 26px 20px; }
+  .browser {
+    flex: 1; min-height: 0;
+    display: flex; flex-direction: column;
+    border: var(--line);
+    border-radius: 16px;
+    box-shadow: var(--pop);
+    background: var(--paper);
+    overflow: hidden;
+  }
+  .browser-bar {
+    display: flex; align-items: center; gap: 7px;
+    padding: 10px 12px;
+    background: var(--soft);
+    border-bottom: var(--line);
+  }
+  .browser-bar i { width: 11px; height: 11px; border-radius: 50%; display: block; }
+  .browser-bar i:nth-child(1) { background: var(--red); }
+  .browser-bar i:nth-child(2) { background: var(--yellow); }
+  .browser-bar i:nth-child(3) { background: #8DB255; }
+  .url {
+    flex: 1; margin-left: 10px;
+    background: var(--paper); border-radius: 999px;
+    padding: 4px 14px; font-size: 13px; color: var(--muted); text-align: center;
+  }
+  .browser iframe { flex: 1; border: 0; width: 100%; background: #fff; }
+  .preview-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+
+  /* ---------- Fullscreen preview ---------- */
+  .stage {
+    position: fixed; inset: 0; z-index: 50;
+    background: var(--bg);
+    padding: 28px;
+    display: none;
+    flex-direction: column;
+  }
+  .stage.on { display: flex; }
+  .stage .browser { box-shadow: 10px 10px 0 var(--ink); }
+  .stage .close { position: absolute; top: 14px; right: 18px; z-index: 2; }
+
+  .stage.view { padding: 12px; }
+  .stage.view .close { background: var(--red); color: #fff; top: auto; bottom: 22px; right: 22px; box-shadow: 4px 4px 0 var(--ink); }
+
+  /* ---------- Share modal ---------- */
+  .modal {
+    position: fixed; inset: 0; z-index: 70;
+    background: rgba(20, 20, 20, .45);
+    display: none; place-items: center;
+    padding: 16px;
+  }
+  .modal.on { display: grid; }
+  .modal-card {
+    position: relative;
+    width: min(440px, 100%);
+    max-height: calc(100vh - 32px); overflow: auto;
+    background: var(--paper);
+    border: var(--line); box-shadow: var(--pop);
+    border-radius: var(--radius-xl);
+    padding: 26px;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .modal-card h2 { margin: 0; font-size: 26px; letter-spacing: -0.02em; }
+  .modal-card p { margin: 0; }
+  .modal-x { position: absolute; top: 14px; right: 14px; }
+  .qr { background: var(--soft); border-radius: var(--radius-l); padding: 16px; display: grid; place-items: center; }
+  .qr svg { width: 100%; max-width: 300px; height: auto; display: block; }
+  .modal-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .warn { background: var(--peach); border-radius: var(--radius-m); padding: 10px 12px; font-size: 14px; }
+  .fine { font-size: 13px; color: var(--muted); }
+
+  /* ---------- Celebration ---------- */
+  .toast {
+    position: fixed; left: 50%; bottom: 28px; z-index: 60;
+    transform: translate(-50%, 140%);
+    background: var(--yellow);
+    border: var(--line); box-shadow: var(--pop);
+    border-radius: 999px;
+    padding: 12px 26px;
+    font-weight: 800; font-size: 18px;
+    transition: transform .35s cubic-bezier(.2, 1.4, .4, 1);
+  }
+  .toast { visibility: hidden; }
+  .toast.on { transform: translate(-50%, 0); visibility: visible; }
+  .burst {
+    position: fixed; z-index: 55; pointer-events: none;
+    font-size: 28px;
+    animation: fly 1.1s ease-out forwards;
+  }
+  @keyframes fly {
+    from { opacity: 1; transform: translate(0, 0) rotate(0); }
+    to { opacity: 0; transform: translate(var(--dx), var(--dy)) rotate(var(--r)); }
+  }
+
+  .brand strong, .tab { white-space: nowrap; }
+  @media (max-width: 1500px) {
+    .brand .kicker, .tab small, .preview-head .kicker { display: none; }
+    .dot { width: 30px; height: 30px; font-size: 12px; }
+    .dots { gap: 5px; flex-wrap: nowrap; }
+  }
+  @media (max-width: 1100px) {
+    .main { grid-template-columns: 1fr; grid-auto-rows: minmax(420px, auto); }
+    .app { height: auto; }
+    .topbar { flex-wrap: wrap; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <strong>&lt;/&gt; Code ta carte</strong>
+      <span class="kicker">futur-en-tous-genres · atelier dev frontend</span>
+    </div>
+    <nav class="dots" id="dots" aria-label="Missions"></nav>
+    <div class="actions">
+      <button class="btn" id="btnStage" title="Montrer ta carte en grand">⛶ En grand</button>
+      <button class="btn" id="btnCodepen" title="Ouvrir ton code dans CodePen, un vrai outil de dev">CodePen ↗</button>
+      <button class="btn primary" id="btnShare">📱 Sur mon natel</button>
+    </div>
+  </header>
+
+  <main class="main">
+    <section class="panel mission" id="mission" aria-live="polite"></section>
+
+    <section class="panel editor">
+      <div class="tabs" role="tablist">
+        <button class="tab" role="tab" data-tab="html" aria-selected="true">HTML <small>· le squelette</small><span class="ping"></span></button>
+        <button class="tab" role="tab" data-tab="css" aria-selected="false">CSS <small>· le style</small><span class="ping"></span></button>
+        <button class="btn small" id="btnImages" style="margin-left:auto">🖼️ Images</button>
+        <span class="saved" id="saved" style="margin-left:0">💾 sauvegardé</span>
+      </div>
+      <div class="code-wrap">
+        <div class="gutter" id="gutter">1</div>
+        <textarea class="code" id="code-html" spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="Code HTML"></textarea>
+        <textarea class="code" id="code-css" spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="Code CSS" hidden></textarea>
+      </div>
+    </section>
+
+    <section class="panel preview">
+      <div class="preview-head">
+        <span class="label">Aperçu en direct</span>
+        <span class="kicker">ça se met à jour quand tu tapes</span>
+      </div>
+      <div class="browser">
+        <div class="browser-bar"><i></i><i></i><i></i><div class="url">www.ma-carte.ch</div></div>
+        <iframe id="preview" title="Aperçu de ta carte"></iframe>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="modal" id="share" role="dialog" aria-modal="true" aria-labelledby="shareTitle">
+  <div class="modal-card">
+    <button class="btn small modal-x" id="btnShareClose" aria-label="Fermer">✕</button>
+    <span class="kicker">emporte ta carte</span>
+    <h2 id="shareTitle">Scanne avec ton natel 📱</h2>
+    <p>Ce QR code contient <b>tout ton code</b>. Ouvre l'appareil photo, vise, et ta carte s'affiche. Ajoute-la à tes favoris pour la retrouver !</p>
+    <div class="qr" id="qr"></div>
+    <p class="warn" id="shareWarn" hidden></p>
+    <div class="modal-actions">
+      <button class="btn" id="btnCopyLink">🔗 Copier le lien</button>
+      <button class="btn" id="btnDownload">⬇ Télécharger le fichier</button>
+    </div>
+    <p class="fine">Rien n'est envoyé sur un serveur : le lien <i>est</i> ton site. Si tu modifies ta carte, refais un nouveau QR code.</p>
+  </div>
+</div>
+
+<div class="modal" id="images" role="dialog" aria-modal="true" aria-labelledby="imagesTitle">
+  <div class="modal-card wide">
+    <button class="btn small modal-x" id="btnImagesClose" aria-label="Fermer">✕</button>
+    <span class="kicker">galerie</span>
+    <h2 id="imagesTitle">Choisis une image 🖼️</h2>
+    <p>Clique sur une image : sa balise <code>&lt;img&gt;</code> s'ajoute dans ton HTML, <b>là où se trouve ton curseur</b>.</p>
+    <div class="label">Photos</div>
+    <div class="gallery" id="galleryPhotos"></div>
+    <div class="label">Stickers</div>
+    <div class="gallery stickers" id="galleryStickers"></div>
+  </div>
+</div>
+
+<form id="codepenForm" action="https://codepen.io/pen/define" method="POST" target="_blank" hidden>
+  <input type="hidden" name="data" id="codepenData">
+</form>
+
+<div class="stage" id="stage">
+  <button class="btn close" id="btnStageClose">✕ Fermer</button>
+  <div class="browser">
+    <div class="browser-bar"><i></i><i></i><i></i><div class="url">www.ma-carte.ch</div></div>
+    <iframe id="stageFrame" title="Ta carte en grand"></iframe>
+  </div>
+</div>
+
+<div class="toast" id="toast">Mission réussie ! 🎉</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script>
+/* =========================================================
+   Code de départ
+   ========================================================= */
+const START_HTML = `<!-- Tout ce que tu écris ici apparaît à droite 👉 -->
+<div class="carte">
+
+  <!-- Écris ton code entre ces deux lignes -->
+
+</div>
+`;
+
+const START_CSS = `/* Ici, on décore ✨ */
+
+body {
+  font-family: sans-serif;
+}
+
+/* Les images ne dépassent jamais de la carte */
+img {
+  max-width: 100%;
+}
+`;
+
+/* =========================================================
+   Galerie d'images testées (Unsplash autorise l'affichage direct)
+   ========================================================= */
+const PHOTO = id => `https://images.unsplash.com/photo-${id}?w=600&h=400&fit=crop`;
+const PHOTOS = [
+  ["chat", "1514888286974-6c03e2ca1dba"], ["chien", "1543466835-00a7907e9de1"], ["lapin", "1585110396000-c9ffd4e4b308"],
+  ["panda", "1564349683136-77e08dba1ef7"], ["cheval", "1553284965-83fd3e82fa5a"], ["pizza", "1513104890138-7c749659a591"],
+  ["donut", "1551024601-bec78aea704b"], ["volley", "1612872087720-bb876e2e67d1"], ["basket", "1546519638-68e109498ffc"],
+  ["foot", "1574629810360-7efbbe195018"], ["skate", "1520045892732-304bc3ac5d8e"], ["danse", "1508700929628-666bc8bd84ea"],
+  ["musique", "1511379938547-c1f69419868d"], ["jeux vidéo", "1606144042614-b2417e99c4e3"], ["livres", "1512820790803-83ca734da794"],
+  ["montagne", "1464822759023-fed622ff2c3b"], ["plage", "1507525428034-b723cf961d3e"], ["ville", "1477959858617-67f85cf4f1df"],
+  ["fleurs", "1490750967868-88aa4486c946"], ["espace", "1446776811953-b23d57bd21aa"],
+].map(([alt, id]) => ({ alt, src: PHOTO(id) }));
+const STICKER = hex => `https://cdn.jsdelivr.net/npm/openmoji@15.1.0/color/svg/${hex}.svg`;
+const STICKERS = [
+  ["chat", "1F431"], ["licorne", "1F984"], ["étoile", "2B50"], ["cœur", "2764"], ["fusée", "1F680"], ["arc-en-ciel", "1F308"],
+  ["volley", "1F3D0"], ["ballon de foot", "26BD"], ["pizza", "1F355"], ["note de musique", "1F3B5"], ["feu", "1F525"], ["manette", "1F3AE"],
+].map(([alt, hex]) => ({ alt, src: STICKER(hex) }));
+
+/* =========================================================
+   Missions
+   Chaque check reçoit { $, $$, cs, px, doc, html, css, rules }
+   ========================================================= */
+const MISSIONS = [
+  {
+    emoji: "👋", title: "Salut le monde !", tab: "html", color: "var(--peach)",
+    intro: "Une page web est faite de <b>balises</b>. Elles vont toujours par deux : une qui ouvre <code>&lt;h1&gt;</code> et une qui ferme <code>&lt;/h1&gt;</code>. <code>h1</code> = le grand titre.",
+    snippet: `<h1>Salut, moi c'est Alex !</h1>`,
+    task: "Écris un grand titre avec <b>ton prénom</b>, à l'intérieur de la carte.",
+    checks: [
+      { label: "Il y a un <code>&lt;h1&gt;</code> dans la carte", test: ({ $ }) => !!$(".carte h1") },
+      { label: "Ton titre contient du texte", test: ({ $ }) => ($(".carte h1")?.textContent.trim().length || 0) > 2 },
+    ],
+  },
+  {
+    emoji: "💬", title: "Présente-toi", tab: "html", color: "var(--peach)",
+    intro: "<code>&lt;p&gt;</code> veut dire <b>paragraphe</b>. C'est la balise pour du texte normal.",
+    snippet: `<p>J'ai 14 ans et j'adore le basket.</p>`,
+    task: "Sous ton titre, ajoute un paragraphe qui parle de toi (au moins une phrase).",
+    checks: [
+      { label: "Il y a un <code>&lt;p&gt;</code> dans la carte", test: ({ $ }) => !!$(".carte p") },
+      { label: "Ton paragraphe fait au moins une phrase", test: ({ $ }) => ($(".carte p")?.textContent.trim().length || 0) >= 15 },
+    ],
+    tip: "<b>Astuce</b> Entoure un mot avec <code>&lt;strong&gt;</code>…<code>&lt;/strong&gt;</code> pour le mettre en gras.",
+  },
+  {
+    emoji: "📋", title: "Mes 3 trucs préférés", tab: "html", color: "var(--peach)",
+    intro: "Une liste, c'est une balise <code>&lt;ul&gt;</code> qui contient des <code>&lt;li&gt;</code> (« list item »). Les balises peuvent se ranger <b>les unes dans les autres</b>, comme des poupées russes.",
+    snippet: `<ul>
+  <li>🎮 Les jeux vidéo</li>
+  <li>🍕 La pizza</li>
+  <li>🐱 Mon chat Mochi</li>
+</ul>`,
+    task: "Fais une liste de <b>3 choses que tu aimes</b>. Les emojis sont permis ! (Windows : <code>⊞ Win</code> + <code>.</code> · Mac : <code>ctrl</code> + <code>⌘</code> + <code>espace</code>)",
+    checks: [
+      { label: "Il y a une liste <code>&lt;ul&gt;</code>", test: ({ $ }) => !!$(".carte ul, .carte ol") },
+      { label: "Elle contient au moins 3 <code>&lt;li&gt;</code>", test: ({ $$ }) => $$(".carte li").length >= 3 },
+    ],
+  },
+  {
+    emoji: "🖼️", title: "Une image et un lien", tab: "html", color: "var(--peach)",
+    intro: "Certaines balises ont des <b>attributs</b> : des infos en plus. <code>src</code> dit où trouver l'image, <code>href</code> dit où mène le lien. <code>&lt;img&gt;</code> n'a pas de balise fermante.",
+    snippet: `<img src="${PHOTOS[0].src}" alt="Un chat">
+
+<a href="https://www.youtube.com">Ma chaîne préférée</a>`,
+    task: "Ajoute une <b>image</b> et un <b>lien</b> vers un site que tu aimes. Pour choisir une image, clique sur <b>🖼️ Images</b> au-dessus de ton code : elle s'ajoute là où se trouve ton curseur.",
+    checks: [
+      { label: "Il y a une <code>&lt;img&gt;</code> avec un <code>src</code>", test: ({ $ }) => !!$(".carte img[src]:not([src=''])") },
+      { label: "L'image s'affiche", test: ({ $$ }) => {
+          const imgs = $$(".carte img[src]:not([src=''])");
+          if (!imgs.length) return false;
+          if (imgs.some(i => i.complete && i.naturalWidth > 0)) return true;
+          if (imgs.some(i => !i.complete)) return "⏳ L'image est en train de charger…";
+          return "😕 Cette adresse ne donne pas d'image. Certains sites bloquent leurs images, ou l'adresse n'est pas celle d'une image. Prends-en une dans 🖼️ Images.";
+        } },
+      { label: "Il y a un lien <code>&lt;a href=…&gt;</code>", test: ({ $ }) => !!$(".carte a[href]:not([href=''])") },
+    ],
+    tip: "<b>Une image trouvée sur internet ?</b> Clic droit sur l'image → « Copier l'adresse de l'image », puis colle-la entre les guillemets de <code>src=\"…\"</code>. Attention : beaucoup de sites (Instagram, Pinterest…) <b>bloquent</b> leurs images. Si ça ne marche pas, ce n'est pas ta faute !",
+  },
+  {
+    emoji: "🎨", title: "Mets de la couleur", tab: "css", color: "var(--lilac)",
+    intro: "Passe à l'onglet <b>CSS</b> ! Le CSS dit <i>à qui</i> on parle (le <b>sélecteur</b>, ici <code>body</code> = toute la page) puis <i>quoi changer</i> : une <b>propriété</b> et une <b>valeur</b>.",
+    snippet: `body {
+  font-family: sans-serif;
+  background-color: hotpink;
+}`,
+    task: "Change la couleur du fond de la page. Essaie des noms comme <code>tomato</code>, <code>gold</code>, <code>lavender</code>, <code>turquoise</code>… ou un code comme <code>#CFE2F5</code>.",
+    checks: [
+      { label: "Le fond de la page n'est plus blanc", test: ({ $, cs }) => {
+          const s = cs($("body"));
+          return s.backgroundImage !== "none" || !["rgba(0, 0, 0, 0)", "rgb(255, 255, 255)", "transparent"].includes(s.backgroundColor);
+        } },
+    ],
+    tip: "<b>N'oublie pas</b> le <code>;</code> à la fin de chaque ligne et l'accolade <code>}</code> à la fin !",
+  },
+  {
+    emoji: "🃏", title: "Ça devient une carte", tab: "css", color: "var(--lilac)",
+    intro: "Le point dans <code>.carte</code> veut dire : « tous les éléments qui ont <code>class=\"carte\"</code> ». On va lui donner un fond, de l'espace à l'intérieur et des coins arrondis.",
+    snippet: `.carte {
+  background-color: white;
+  padding: 32px;
+  border-radius: 24px;
+  max-width: 420px;
+}`,
+    task: "Transforme ta carte : un <b>fond</b>, du <b>padding</b> (l'espace intérieur) et des <b>coins arrondis</b>.",
+    checks: [
+      { label: "La carte a une couleur de fond", test: ({ $, cs }) => { const s = cs($(".carte")); return s.backgroundColor !== "rgba(0, 0, 0, 0)" || s.backgroundImage !== "none"; } },
+      { label: "La carte a du <code>padding</code>", test: ({ $, cs, px }) => px(cs($(".carte")).paddingTop) >= 8 },
+      { label: "Les coins sont arrondis (<code>border-radius</code>)", test: ({ $, cs, px }) => px(cs($(".carte")).borderTopLeftRadius) >= 6 },
+    ],
+    tip: "<b>Joue avec les chiffres !</b> Mets <code>border-radius: 200px</code> pour voir ce qui se passe 😄",
+  },
+  {
+    emoji: "🔤", title: "Choisis ta typo", tab: "css", color: "var(--lilac)",
+    intro: "Des milliers de polices sont gratuites sur <b>Google Fonts</b>. La ligne <code>@import</code> va chercher la police sur internet, elle doit être <b>tout en haut</b> du CSS.",
+    snippet: `@import url("https://fonts.googleapis.com/css2?family=Pacifico&display=swap");
+
+h1 {
+  font-family: "Pacifico";
+  color: tomato;
+}`,
+    task: "Donne une <b>police</b> et une <b>couleur</b> à ton titre. Autres polices à tester : <code>Bungee</code>, <code>Lobster</code>, <code>Rubik Mono One</code>, <code>Press Start 2P</code>.",
+    checks: [
+      { label: "Ton titre a une nouvelle police", test: ({ $, cs }) => !/^\s*(sans-serif|serif|"?Times New Roman"?.*)\s*$/i.test(cs($(".carte h1") || $("h1") || $("body")).fontFamily) },
+      { label: "Ton titre a une couleur", test: ({ $, cs }) => { const h = $("h1"); return !!h && cs(h).color !== "rgb(0, 0, 0)"; } },
+    ],
+    tip: "<b>Pour changer de police</b>, remplace <code>Pacifico</code> aux <b>deux</b> endroits (dans l'URL, les espaces deviennent des <code>+</code> : <code>Press+Start+2P</code>).",
+  },
+  {
+    emoji: "🎯", title: "Pile au centre", tab: "css", color: "var(--lilac)",
+    intro: "Centrer quelque chose, c'est <b>la blague préférée des devs</b> 😅. Avec <code>flex</code>, on y arrive en 4 lignes.",
+    snippet: `body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}`,
+    task: "Ajoute ces lignes dans ton bloc <code>body</code> (garde ta couleur de fond !) pour centrer ta carte dans la page.",
+    checks: [
+      { label: "<code>display: flex</code> sur le body", test: ({ $, cs }) => /flex|grid/.test(cs($("body")).display) },
+      { label: "Centré horizontalement", test: ({ $, cs }) => { const s = cs($("body")); return s.justifyContent === "center" || s.placeContent === "center" || s.justifyItems === "center"; } },
+      { label: "Centré verticalement", test: ({ $, cs }) => { const s = cs($("body")); return s.alignItems === "center" || s.alignContent === "center"; } },
+    ],
+    tip: "<b>Attention</b> : il ne faut qu'<b>un seul</b> bloc <code>body { }</code>. Mets les nouvelles lignes dedans.",
+  },
+  {
+    emoji: "🖍️", title: "Le style « BD »", tab: "css", color: "var(--lilac)",
+    intro: "Tu as vu les dessins dans les slides, avec un gros contour noir et une ombre décalée ? On peut faire pareil en CSS !",
+    snippet: `.carte {
+  border: 3px solid black;
+  box-shadow: 10px 10px 0 black;
+}`,
+    task: "Ajoute une <b>bordure</b> et une <b>ombre</b> à ta carte. Ajoute ces lignes <b>dans</b> ton bloc <code>.carte</code>.",
+    checks: [
+      { label: "La carte a une bordure", test: ({ $, cs, px }) => { const s = cs($(".carte")); return px(s.borderTopWidth) >= 1 && s.borderTopStyle !== "none"; } },
+      { label: "La carte a une ombre (<code>box-shadow</code>)", test: ({ $, cs }) => cs($(".carte")).boxShadow !== "none" },
+    ],
+    tip: "<b>Change les chiffres</b> de l'ombre : <code>-10px 20px</code> ? Et une ombre floue : <code>0 20px 40px rgba(0,0,0,.3)</code> ?",
+  },
+  {
+    emoji: "✨", title: "Ça bouge !", tab: "css", color: "var(--blue)",
+    intro: "<code>:hover</code> veut dire « quand la souris passe dessus ». <code>transition</code> rend le changement tout doux.",
+    snippet: `.carte {
+  transition: transform 0.3s;
+}
+
+.carte:hover {
+  transform: rotate(-3deg) scale(1.05);
+}`,
+    task: "Fais réagir ta carte quand on passe la souris dessus. Puis passe ta souris dessus 👉",
+    checks: [
+      { label: "Il y a un style <code>:hover</code> avec <code>transform</code>", test: ({ rules }) => rules().some(r => r.selectorText && r.selectorText.includes(":hover") && r.style && r.style.transform) },
+      { label: "La carte a une <code>transition</code>", test: ({ $, cs }) => cs($(".carte")).transitionDuration.split(",").some(d => parseFloat(d) > 0) },
+    ],
+    tip: "<b>Tu peux aussi</b> changer la couleur au survol, ou faire grossir seulement l'image : <code>.carte img:hover { … }</code>",
+  },
+  {
+    emoji: "🌈", title: "Bonus : animation", tab: "css", color: "var(--yellow)", bonus: true,
+    intro: "Avec <code>@keyframes</code>, tu décris une animation étape par étape, puis tu la donnes à un élément.",
+    snippet: `@keyframes danse {
+  0%   { transform: translateY(0); }
+  50%  { transform: translateY(-12px); }
+  100% { transform: translateY(0); }
+}
+
+h1 {
+  animation: danse 1s infinite;
+}`,
+    task: "Anime un élément de ta carte. Essaie aussi un fond en dégradé : <code>background: linear-gradient(45deg, gold, tomato);</code>",
+    checks: [
+      { label: "Il y a des <code>@keyframes</code>", test: ({ rules }) => rules().some(r => r.type === 7) },
+      { label: "Un élément utilise ton animation", test: ({ $$, cs }) => $$("body *").some(el => cs(el).animationName !== "none") },
+    ],
+  },
+  {
+    emoji: "🏁", title: "Le bac à sable", tab: "css", color: "var(--sage)", bonus: true, sandbox: true,
+    intro: "Bravo, tu as tout débloqué ! 🎉 Maintenant c'est toi la dev. Quelques défis si tu veux :",
+    snippet: `🔥 Mets un emoji géant derrière ta carte
+🔥 Fais un bouton rouge tout rond
+🔥 Ajoute une 2e carte à côté de la première
+🔥 Fais tourner ton image en boucle
+🔥 Surprends-nous !`,
+    task: "Quand tu es contente de ta carte, clique sur <b>📱 Sur mon natel</b> et scanne le QR code pour l'emporter. Envie de continuer à la maison ? <b>CodePen ↗</b> ouvre ton code dans l'outil qu'utilisent les vrais devs.",
+    checks: [],
+  },
+];
+
+/* =========================================================
+   État + sauvegarde
+   ========================================================= */
+const KEY = "code-ta-carte:v1";
+const store = {
+  load() { try { return JSON.parse(localStorage.getItem(KEY)) || null; } catch { return null; } },
+  save(s) { try { localStorage.setItem(KEY, JSON.stringify(s)); } catch {} },
+};
+const saved = store.load();
+const state = {
+  html: saved?.html ?? START_HTML,
+  css: saved?.css ?? START_CSS,
+  current: saved?.current ?? 0,
+  done: new Set(saved?.done ?? []),
+  tab: "html",
+};
+const persist = () => store.save({ html: state.html, css: state.css, current: state.current, done: [...state.done] });
+
+/* =========================================================
+   Éléments
+   ========================================================= */
+const el = id => document.getElementById(id);
+const taHtml = el("code-html"), taCss = el("code-css"), gutter = el("gutter");
+const frame = el("preview"), stageFrame = el("stageFrame");
+taHtml.value = state.html;
+taCss.value = state.css;
+
+/* ---------- Onglets ---------- */
+function setTab(tab) {
+  state.tab = tab;
+  document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", String(t.dataset.tab === tab)));
+  taHtml.hidden = tab !== "html";
+  taCss.hidden = tab !== "css";
+  updateGutter();
+  activeTa().focus({ preventScroll: true });
+}
+const activeTa = () => (state.tab === "html" ? taHtml : taCss);
+document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => setTab(t.dataset.tab)));
+
+/* ---------- Numéros de ligne ---------- */
+function updateGutter() {
+  const n = activeTa().value.split("\n").length;
+  gutter.textContent = Array.from({ length: n }, (_, i) => i + 1).join("\n");
+  gutter.scrollTop = activeTa().scrollTop;
+}
+[taHtml, taCss].forEach(ta => ta.addEventListener("scroll", () => (gutter.scrollTop = ta.scrollTop)));
+
+/* ---------- Petites aides d'édition ---------- */
+function onKey(e) {
+  const ta = e.target;
+  const { selectionStart: s, selectionEnd: end, value: v } = ta;
+  if (e.key === "Tab") {
+    e.preventDefault();
+    ta.setRangeText("  ", s, end, "end");
+    ta.dispatchEvent(new Event("input"));
+  } else if (e.key === "Enter") {
+    // garde l'indentation de la ligne
+    const lineStart = v.lastIndexOf("\n", s - 1) + 1;
+    const indent = v.slice(lineStart).match(/^[ \t]*/)[0];
+    const prev = v[s - 1];
+    const extra = prev === "{" || (prev === ">" && /<([a-z0-9]+)[^>]*>$/i.test(v.slice(lineStart, s)) && !/<\/|\/>$/.test(v.slice(lineStart, s))) ? "  " : "";
+    e.preventDefault();
+    ta.setRangeText("\n" + indent + extra, s, end, "end");
+    ta.dispatchEvent(new Event("input"));
+  }
+}
+[taHtml, taCss].forEach(ta => ta.addEventListener("keydown", onKey));
+
+/* =========================================================
+   Rendu de l'aperçu
+   ========================================================= */
+const buildDoc = (html, css, title = "Ma carte") =>
+`<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>${title}</title>
+<style>
+${css}
+</style>
+</head>
+<body>
+${html}
+</body>
+</html>`;
+
+let renderTimer;
+function scheduleRender() {
+  clearTimeout(renderTimer);
+  renderTimer = setTimeout(render, 250);
+}
+function render() {
+  frame.srcdoc = buildDoc(state.html, state.css);
+  if (el("stage").classList.contains("on")) stageFrame.srcdoc = frame.srcdoc;
+}
+frame.addEventListener("load", () => {
+  // revérifie dès qu'une image finit de charger (ou échoue), même sur un wifi lent
+  const d = frame.contentDocument;
+  if (d) ["load", "error"].forEach(t => d.addEventListener(t, e => { if (e.target.tagName === "IMG") runChecks(); }, true));
+  runChecks();
+  // les polices et images arrivent parfois après le load
+  setTimeout(runChecks, 600);
+  setTimeout(runChecks, 1500);
+});
+
+function onInput(e) {
+  const isHtml = e.target === taHtml;
+  if (isHtml) state.html = taHtml.value; else state.css = taCss.value;
+  updateGutter();
+  persist();
+  flashSaved();
+  scheduleRender();
+}
+taHtml.addEventListener("input", onInput);
+taCss.addEventListener("input", onInput);
+
+let savedTimer;
+function flashSaved() {
+  const s = el("saved");
+  s.textContent = "✏️ …";
+  clearTimeout(savedTimer);
+  savedTimer = setTimeout(() => (s.textContent = "💾 sauvegardé"), 600);
+}
+
+/* =========================================================
+   Vérifications
+   ========================================================= */
+function ctx() {
+  const doc = frame.contentDocument;
+  const win = frame.contentWindow;
+  if (!doc || !win || !doc.body) return null;
+  return {
+    doc,
+    html: state.html, css: state.css,
+    $: sel => doc.querySelector(sel),
+    $$: sel => [...doc.querySelectorAll(sel)],
+    cs: node => (node ? win.getComputedStyle(node) : win.getComputedStyle(doc.body)),
+    px: v => parseFloat(v) || 0,
+    rules: () => {
+      const out = [];
+      const walk = list => { for (const r of list) { out.push(r); if (r.cssRules) walk(r.cssRules); } };
+      for (const sh of doc.styleSheets) { try { walk(sh.cssRules); } catch {} }
+      return out;
+    },
+  };
+}
+
+function evaluate(mission, c) {
+  return mission.checks.map(ch => {
+    // true = réussi · false = pas encore · "texte" = pas encore, avec une explication
+    try { const r = ch.test(c); return typeof r === "string" ? r : !!r; } catch { return false; }
+  });
+}
+
+function runChecks() {
+  const c = ctx();
+  if (!c) return;
+  const m = MISSIONS[state.current];
+  const results = evaluate(m, c);
+  document.querySelectorAll("#checks li").forEach((li, i) => {
+    const ok = results[i] === true;
+    li.classList.toggle("ok", ok);
+    li.querySelector(".ico").textContent = ok ? "✅" : "⬜";
+    const why = li.querySelector(".why");
+    why.textContent = typeof results[i] === "string" ? results[i] : "";
+    why.hidden = !why.textContent;
+  });
+  const allOk = m.checks.length > 0 && results.every(r => r === true);
+  const next = el("btnNext");
+  if (next) next.disabled = !(allOk || m.checks.length === 0 || state.done.has(state.current));
+  if (allOk && !state.done.has(state.current)) {
+    state.done.add(state.current);
+    persist();
+    celebrate();
+    renderDots();
+    if (next) next.disabled = false;
+  }
+}
+
+/* =========================================================
+   Affichage de la mission
+   ========================================================= */
+function renderDots() {
+  const nav = el("dots");
+  nav.innerHTML = "";
+  MISSIONS.forEach((m, i) => {
+    const b = document.createElement("button");
+    b.className = "dot" + (state.done.has(i) ? " done" : "") + (i === state.current ? " current" : "") + (m.bonus ? " bonus" : "");
+    b.textContent = m.sandbox ? "🏁" : state.done.has(i) ? "✓" : i + 1;
+    b.title = m.title;
+    b.setAttribute("aria-label", `Mission ${i + 1} : ${m.title}`);
+    b.addEventListener("click", () => goTo(i));
+    nav.appendChild(b);
+  });
+}
+
+function renderMission() {
+  const m = MISSIONS[state.current];
+  const n = String(state.current + 1).padStart(2, "0");
+  const lang = m.tab.toUpperCase();
+  el("mission").innerHTML = `
+    <div class="mission-hero" style="background:${m.color}">
+      <span class="emoji">${m.emoji}</span>
+      <span class="kicker" style="color:var(--ink)">${m.sandbox ? "fin" : "mission " + n} · ${lang}</span>
+      <h2>${m.title}</h2>
+    </div>
+    <p class="intro">${m.intro}</p>
+    <div>
+      <div class="label" style="margin-bottom:6px">${m.sandbox ? "Défis" : "Exemple"}</div>
+      <div class="snippet"><button class="btn small copy" id="btnCopy">📋 Copier</button><span id="snip"></span></div>
+    </div>
+    <p class="intro"><b>🎯 À toi :</b> ${m.task}</p>
+    ${m.checks.length ? `<div>
+      <div class="label" style="margin-bottom:6px">Ta checklist</div>
+      <ul class="checks" id="checks">${m.checks.map(c => `<li><span class="ico">⬜</span><span>${c.label}<span class="why" hidden></span></span></li>`).join("")}</ul>
+    </div>` : ""}
+    ${m.tip ? `<div class="tip">${m.tip}</div>` : ""}
+    <div class="nav">
+      <button class="btn" id="btnPrev" ${state.current === 0 ? "disabled style='visibility:hidden'" : ""}>← Retour</button>
+      ${state.current < MISSIONS.length - 1 ? `<button class="btn primary" id="btnNext" disabled>Mission suivante →</button>` : ""}
+    </div>`;
+  el("snip").textContent = m.snippet;
+  el("btnCopy").addEventListener("click", async () => {
+    try { await navigator.clipboard.writeText(m.snippet); el("btnCopy").textContent = "✓ Copié !"; }
+    catch { el("btnCopy").textContent = "Sélectionne et copie"; }
+    setTimeout(() => (el("btnCopy").textContent = "📋 Copier"), 1400);
+  });
+  el("btnPrev")?.addEventListener("click", () => goTo(state.current - 1));
+  el("btnNext")?.addEventListener("click", () => goTo(state.current + 1));
+  document.querySelectorAll(".tab").forEach(t => t.classList.toggle("hint", t.dataset.tab === m.tab && !m.sandbox));
+  el("mission").scrollTop = 0;
+  runChecks();
+}
+
+function goTo(i) {
+  state.current = Math.max(0, Math.min(MISSIONS.length - 1, i));
+  persist();
+  renderDots();
+  renderMission();
+  if (!MISSIONS[state.current].sandbox) setTab(MISSIONS[state.current].tab);
+}
+
+/* =========================================================
+   Célébration
+   ========================================================= */
+function celebrate() {
+  const t = el("toast");
+  t.textContent = ["Mission réussie ! 🎉", "Trop forte ! 🔥", "Yes ! 🙌", "Comme une vraie dev ! 💪", "Bien joué ! ⭐"][Math.floor(Math.random() * 5)];
+  t.classList.add("on");
+  setTimeout(() => t.classList.remove("on"), 1800);
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const r = frame.getBoundingClientRect();
+  const emojis = ["🎉", "✨", "⭐", "💥", "🌈", "🔥", "💖"];
+  for (let i = 0; i < 18; i++) {
+    const s = document.createElement("span");
+    s.className = "burst";
+    s.textContent = emojis[i % emojis.length];
+    s.style.left = r.left + r.width / 2 + "px";
+    s.style.top = r.top + r.height / 2 + "px";
+    const a = Math.random() * Math.PI * 2, d = 120 + Math.random() * 220;
+    s.style.setProperty("--dx", Math.cos(a) * d + "px");
+    s.style.setProperty("--dy", Math.sin(a) * d + "px");
+    s.style.setProperty("--r", (Math.random() * 360 - 180) + "deg");
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 1200);
+  }
+}
+
+/* =========================================================
+   Plein écran + téléchargement
+   ========================================================= */
+el("btnStage").addEventListener("click", () => {
+  el("stage").classList.add("on");
+  stageFrame.srcdoc = buildDoc(state.html, state.css);
+});
+el("btnStageClose").addEventListener("click", () => el("stage").classList.remove("on"));
+document.addEventListener("keydown", e => { if (e.key === "Escape") el("stage").classList.remove("on"); });
+
+/* =========================================================
+   Partage : le code entier est compressé dans le lien (#c=…)
+   Aucun serveur, aucun compte, aucune donnée stockée ailleurs.
+   ========================================================= */
+const b64url = bytes => {
+  let s = "";
+  bytes.forEach(b => (s += String.fromCharCode(b)));
+  return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+};
+const unb64url = str => {
+  const s = atob(str.replace(/-/g, "+").replace(/_/g, "/"));
+  return Uint8Array.from(s, ch => ch.charCodeAt(0));
+};
+async function pack(obj) {
+  const stream = new Blob([JSON.stringify(obj)]).stream().pipeThrough(new CompressionStream("deflate-raw"));
+  return b64url(new Uint8Array(await new Response(stream).arrayBuffer()));
+}
+async function unpack(str) {
+  const stream = new Blob([unb64url(str)]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+  return JSON.parse(await new Response(stream).text());
+}
+// on retire les commentaires d'aide pour garder le QR code léger
+const lean = s => s.replace(/<!--[\s\S]*?-->/g, "").replace(/\/\*[\s\S]*?\*\//g, "").replace(/\n{3,}/g, "\n\n").trim();
+
+let shareUrl = "";
+async function openShare() {
+  const data = await pack({ h: lean(state.html), c: lean(state.css) });
+  shareUrl = location.origin + location.pathname + "#c=" + data;
+  const warn = el("shareWarn");
+  const qrBox = el("qr");
+  if (location.protocol === "file:") {
+    warn.hidden = false;
+    warn.innerHTML = "⚠️ La plateforme est ouverte depuis un fichier local : le QR code ne marchera sur le natel que quand elle sera <b>en ligne</b>.";
+  } else warn.hidden = true;
+  try {
+    const qr = qrcode(0, "L");
+    qr.addData(shareUrl);
+    qr.make();
+    qrBox.innerHTML = qr.createSvgTag({ cellSize: 4, margin: 2, scalable: true });
+  } catch (err) {
+    qrBox.innerHTML = "<p>😅 Ta carte est trop grande pour un QR code. Utilise « Copier le lien » et envoie-le-toi.</p>";
+  }
+  el("share").classList.add("on");
+}
+el("btnShare").addEventListener("click", openShare);
+el("btnShareClose").addEventListener("click", () => el("share").classList.remove("on"));
+el("share").addEventListener("click", e => { if (e.target === el("share")) el("share").classList.remove("on"); });
+el("btnCopyLink").addEventListener("click", async () => {
+  try { await navigator.clipboard.writeText(shareUrl); el("btnCopyLink").textContent = "✓ Lien copié !"; }
+  catch { prompt("Copie ce lien :", shareUrl); }
+  setTimeout(() => (el("btnCopyLink").textContent = "🔗 Copier le lien"), 1500);
+});
+
+/* ---------- Galerie : insère la balise au curseur ---------- */
+let htmlCaret = null;
+taHtml.addEventListener("blur", () => (htmlCaret = [taHtml.selectionStart, taHtml.selectionEnd]));
+function fillGallery(box, items) {
+  box.innerHTML = "";
+  items.forEach(({ alt, src }) => {
+    const b = document.createElement("button");
+    b.className = "pick";
+    b.innerHTML = `<img src="${src}" alt="" loading="lazy"><span>${alt}</span>`;
+    b.title = alt;
+    b.addEventListener("click", () => insertImage(src, alt));
+    box.appendChild(b);
+  });
+}
+function insertImage(src, alt) {
+  const tag = `<img src="${src}" alt="${alt}">`;
+  const v = taHtml.value;
+  let [s, e] = htmlCaret || [v.length, v.length];
+  // pas de curseur utile ? on place l'image juste avant la fin de la carte
+  if (!htmlCaret || s === 0) {
+    const close = v.lastIndexOf("</div>");
+    s = e = close > -1 ? close : v.length;
+  }
+  const lineStart = v.lastIndexOf("\n", s - 1) + 1;
+  const before = v.slice(lineStart, s);
+  const text = before === "" ? "  " + tag + "\n" : /^\s*$/.test(before) ? tag + "\n" + before : "\n  " + tag;
+  taHtml.setRangeText(text, s, e, "end");
+  el("images").classList.remove("on");
+  setTab("html");
+  taHtml.setSelectionRange(s, s + text.length);
+  taHtml.dispatchEvent(new Event("input"));
+  htmlCaret = [taHtml.selectionEnd, taHtml.selectionEnd];
+}
+el("btnImages").addEventListener("click", () => {
+  if (!el("galleryPhotos").children.length) {
+    fillGallery(el("galleryPhotos"), PHOTOS);
+    fillGallery(el("galleryStickers"), STICKERS);
+  }
+  el("images").classList.add("on");
+});
+el("btnImagesClose").addEventListener("click", () => el("images").classList.remove("on"));
+el("images").addEventListener("click", e => { if (e.target === el("images")) el("images").classList.remove("on"); });
+
+/* ---------- CodePen (pré-remplissage, sans compte) ---------- */
+el("btnCodepen").addEventListener("click", () => {
+  const title = (frame.contentDocument?.querySelector("h1")?.textContent || "Ma carte").trim();
+  el("codepenData").value = JSON.stringify({ title, html: state.html, css: state.css, editors: "110" });
+  el("codepenForm").submit();
+});
+
+el("btnDownload").addEventListener("click", () => {
+  const name = (frame.contentDocument?.querySelector("h1")?.textContent || "").trim();
+  const doc = buildDoc(state.html, state.css, name || "Ma carte");
+  const blob = new Blob([doc], { type: "text/html" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "index.html";
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+});
+
+/* ---------- Remise à zéro (pour l'animateur) : ajouter #reset à l'URL ---------- */
+if (location.hash === "#reset") {
+  try { localStorage.removeItem(KEY); } catch {}
+  location.replace(location.pathname);
+}
+
+/* =========================================================
+   Démarrage
+   ========================================================= */
+renderDots();
+renderMission();
+setTab(MISSIONS[state.current].sandbox ? "css" : MISSIONS[state.current].tab);
+render();
+
+/* ---------- Mode « vue » : quelqu'un ouvre un lien partagé ---------- */
+if (location.hash.startsWith("#c=")) {
+  unpack(location.hash.slice(3)).then(({ h, c }) => {
+    const stage = el("stage");
+    stage.classList.add("on", "view");
+    stageFrame.srcdoc = buildDoc(h, c, "Ma carte");
+    const btn = el("btnStageClose");
+    btn.textContent = "✏️ Modifier le code";
+    btn.onclick = e => {
+      e.stopImmediatePropagation();
+      const mine = state.html !== START_HTML || state.css !== START_CSS;
+      if (mine && !confirm("Remplacer le code de cet appareil par celui de cette carte ?")) return;
+      state.html = taHtml.value = h;
+      state.css = taCss.value = c;
+      state.current = MISSIONS.length - 1;
+      persist();
+      history.replaceState(null, "", location.pathname);
+      stage.classList.remove("on", "view");
+      btn.textContent = "✕ Fermer";
+      btn.onclick = null;
+      goTo(state.current);
+      render();
+    };
+  }).catch(() => history.replaceState(null, "", location.pathname));
+}
+</script>
+</body>
+</html>
