@@ -9,7 +9,7 @@ Chaque participante code sa carte de profil en 10 missions guidées (validation 
 - Un seul fichier, `index.html`, sans build ni dépendance à installer.
 - Le travail est sauvegardé dans le `localStorage` du navigateur.
 - **📱 Sur mon natel** : le code est compressé dans le lien (`#c=…`). Aucun serveur, aucun compte, aucune donnée stockée. Le site doit donc rester en ligne à la même adresse pour que les QR codes continuent de marcher.
-- **🖼️ Images** : galerie de 20 photos et 12 stickers hébergés dans `img/`, insérés au curseur.
+- **🖼️ Images** : galerie de 53 photos et 40 stickers hébergés dans `img/`, insérés au curseur.
 - **CodePen ↗** ouvre le code dans CodePen, pré-rempli, sans compte.
 
 ## En local
