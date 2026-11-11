@@ -254,14 +254,14 @@
   .tab[data-tab="html"][aria-selected="true"] { background: var(--peach); }
   .tab[data-tab="css"][aria-selected="true"] { background: var(--lilac); }
   .tab[data-tab="page2"][aria-selected="true"] { background: var(--yellow); }
+  /* même forme que les onglets : le mot, puis l'action en petit */
   .img-btn {
     margin-left: auto;
-    display: flex; flex-direction: column; align-items: center;
+    border: 2px solid transparent; /* comme les onglets : même hauteur */
+    display: flex; flex-direction: column; align-items: flex-start;
     padding: 5px 14px 6px; border-radius: 16px; line-height: 1.15;
   }
-  .img-btn .ico { font-size: 18px; line-height: 1.1; transition: transform .25s cubic-bezier(.3, 1.8, .5, 1); }
   .img-btn small { font-size: 11.5px; font-weight: 500; opacity: .7; } /* comme la 2e ligne des onglets */
-  .img-btn:hover .ico { transform: scale(1.18) rotate(-6deg); }
   .tab .ping {
     display: inline-block; width: 8px; height: 8px; border-radius: 50%;
     background: var(--red); margin-left: 6px; vertical-align: middle;
@@ -527,7 +527,7 @@
         <button class="tab" role="tab" data-tab="html" aria-selected="true" title="index.html"><span>HTML<span class="ping"></span></span><small>page 1</small></button>
         <button class="tab" role="tab" data-tab="page2" aria-selected="false" title="page2.html" hidden><span>HTML<span class="ping"></span></span><small>page 2</small></button>
         <button class="tab" role="tab" data-tab="css" aria-selected="false" title="style.css"><span>CSS<span class="ping"></span></span><small>style.css</small></button>
-        <button class="btn img-btn" id="btnImages" title="Ajouter une image"><span class="ico">🖼️</span><small>Images</small></button>
+        <button class="btn img-btn" id="btnImages" title="Ajouter une image"><span>Images</span><small>choisir</small></button>
       </div>
       <div class="code-wrap">
         <pre class="skel skel-top" id="skelTop" title="Ces lignes sont déjà écrites pour toi"></pre>
