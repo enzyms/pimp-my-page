@@ -388,7 +388,6 @@
     <p class="warn" id="shareWarn" hidden></p>
     <div class="modal-actions">
       <button class="btn" id="btnCopyLink">🔗 Copier le lien</button>
-      <button class="btn" id="btnDownload">⬇ Télécharger le fichier</button>
     </div>
     <p class="fine">Rien n'est envoyé sur un serveur : le lien <i>est</i> ton site. Si tu modifies ta carte, refais un nouveau QR code.</p>
   </div>
@@ -924,7 +923,7 @@ function celebrate() {
 }
 
 /* =========================================================
-   Plein écran + téléchargement
+   Plein écran
    ========================================================= */
 el("btnStage").addEventListener("click", () => {
   el("stage").classList.add("on");
@@ -1034,18 +1033,6 @@ el("btnCodepen").addEventListener("click", () => {
   const title = (frame.contentDocument?.querySelector("h1")?.textContent || "Ma carte").trim();
   el("codepenData").value = JSON.stringify({ title, html: state.html, css: state.css, editors: "110" });
   el("codepenForm").submit();
-});
-
-el("btnDownload").addEventListener("click", () => {
-  const name = (frame.contentDocument?.querySelector("h1")?.textContent || "").trim();
-  const doc = buildDoc(state.html, state.css, name || "Ma carte");
-  const blob = new Blob([doc], { type: "text/html" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "index.html";
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
 });
 
 /* ---------- Remise à zéro (pour l'animateur) : ajouter #reset à l'URL ---------- */
