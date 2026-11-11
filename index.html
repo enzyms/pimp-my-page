@@ -95,7 +95,8 @@
   /* colonnes : missions · éditeur · poignée · aperçu
      --mw : largeur des missions (repliable) · --pw : largeur de l'aperçu (poignée) */
   .main {
-    --mw: clamp(320px, 27vw, 380px);
+    --mw-open: clamp(320px, 27vw, 380px);
+    --mw: var(--mw-open);
     min-height: 0;
     display: grid;
     grid-template-columns: var(--mw) minmax(260px, 1fr) 18px minmax(336px, var(--pw, 1fr));
@@ -119,10 +120,13 @@
   /* ---------- Mission ---------- */
   .mission { position: relative; overflow: hidden; padding: 0; }
   .mission-scroll {
-    flex: 1; min-height: 0; min-width: 250px;
+    /* largeur figée sur la colonne ouverte : pendant le repli, le texte ne se recompose pas,
+       la colonne le recouvre simplement */
+    flex: 1; min-height: 0; width: calc(var(--mw-open) - 16px); flex-shrink: 0;
     overflow: auto;
-    display: flex; flex-direction: column; gap: 14px;
-    padding: 20px 20px 12px;
+    /* rythme sur la ligne de 24 px (16 × 1,5) : 24 entre les blocs, 8 entre un titre et son contenu */
+    display: flex; flex-direction: column; gap: 24px;
+    padding: 24px 24px 20px;
     transition: opacity .2s, transform .35s;
   }
   /* le contenu d'une nouvelle mission arrive en cascade */
@@ -132,16 +136,17 @@
   .mission-scroll.enter > :nth-child(4) { animation-delay: .12s; }
   .mission-scroll.enter > :nth-child(n+5) { animation-delay: .16s; }
   @keyframes rise { from { opacity: 0; transform: translateY(14px); } }
-  .mission-hero { position: relative; }
+  /* bouton discret pour replier la colonne, dans le coin du bandeau */
   .fold {
-    position: absolute; top: 30px; right: 30px; z-index: 1;
-    width: 34px; height: 34px; padding: 0;
-    border: 2px solid var(--ink); border-radius: 50%;
-    background: var(--paper); font-weight: 800;
+    flex: none; margin: -4px -4px 0 auto;
+    width: 30px; height: 30px; padding: 0;
+    border: 0; border-radius: 10px;
+    background: transparent; color: rgba(20, 20, 20, .5);
     display: grid; place-items: center;
-    transition: transform .2s cubic-bezier(.3, 1.6, .5, 1);
+    transition: background .15s, color .15s, transform .25s cubic-bezier(.3, 1.6, .5, 1);
   }
-  .fold:hover { transform: translateX(-3px) rotate(-8deg); }
+  .fold svg { width: 18px; height: 18px; }
+  .fold:hover, .fold:focus-visible { background: rgba(20, 20, 20, .08); color: var(--ink); transform: translateX(-2px); outline: none; }
   /* colonne repliée : un rail vertical « Missions » sur toute la hauteur */
   .rail {
     position: absolute; inset: 0;
@@ -170,14 +175,15 @@
   .main.folded .mission-scroll, .main.folded .nav, .main.folded .fold { opacity: 0; pointer-events: none; transform: translateX(-24px); }
   .mission-hero {
     border-radius: var(--radius-l);
-    padding: 18px 18px 16px;
-    display: flex; flex-direction: column; gap: 6px;
+    padding: 16px 16px 20px 20px;
+    display: flex; flex-direction: column; gap: 12px;
   }
-  .mission-hero .emoji { font-size: 40px; line-height: 1; }
-  .mission-hero h2 { margin: 6px 0 0; font-size: 26px; line-height: 1.1; letter-spacing: -0.02em; }
-  .mission-hero .tag { font-size: 13px; color: var(--ink); opacity: .7; }
+  .hero-top { display: flex; align-items: center; gap: 10px; }
+  .mission-hero .emoji { font-size: 22px; line-height: 1; }
+  .mission-hero .chapo { font-size: 13px; font-weight: 600; letter-spacing: .02em; opacity: .7; }
+  .mission-hero h2 { margin: 0; font-size: 24px; line-height: 1.15; letter-spacing: -0.02em; text-wrap: balance; }
   .mission p { margin: 0; }
-  .mission .intro { font-size: 16px; }
+  .mission .intro { font-size: 16px; line-height: 1.5; text-wrap: pretty; }
   .mission .intro code, .checks code, .tip code {
     font-family: var(--mono); font-size: .88em;
     background: var(--soft); padding: 1px 6px; border-radius: 6px;
@@ -186,35 +192,40 @@
     position: relative;
     background: var(--soft);
     border-radius: var(--radius-m);
-    padding: 46px 14px 14px 16px;
+    padding: 12px 44px 12px 14px;
     font-family: var(--mono);
-    font-size: 13.5px;
-    line-height: 1.55;
+    font-size: 13px;
+    line-height: 1.6;
     white-space: pre-wrap;
     word-break: break-word;
   }
-  .snippet .copy { position: absolute; top: 8px; right: 8px; background: var(--paper); }
-  .label { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+  .snippet .copy {
+    position: absolute; top: 6px; right: 6px;
+    width: 30px; height: 30px; padding: 0; border-radius: 10px;
+    background: transparent; font-size: 15px;
+  }
+  .snippet .copy:hover { background: var(--paper); }
+  .label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 8px; }
   .checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
   .checks li {
     display: flex; gap: 10px; align-items: flex-start;
-    padding: 9px 12px;
+    padding: 8px 12px;
     border-radius: var(--radius-m);
     background: var(--soft);
-    font-size: 15px;
+    font-size: 15px; line-height: 1.4;
     transition: background .2s;
   }
   .checks li .ico { flex: none; width: 22px; text-align: center; }
   .checks li.ok { background: var(--sage); }
-  .tip { background: var(--blue); border-radius: var(--radius-m); padding: 12px 14px; font-size: 14.5px; }
+  .tip { background: var(--blue); border-radius: var(--radius-m); padding: 14px 16px; font-size: 14px; line-height: 1.5; text-wrap: pretty; }
   .tip b { display: block; margin-bottom: 2px; }
   details.help summary { cursor: pointer; font-weight: 700; color: var(--red); list-style: none; }
   details.help summary::-webkit-details-marker { display: none; }
   details.help[open] summary { margin-bottom: 8px; }
   /* Retour / Mission suivante : toujours visibles, collés en bas de la colonne */
   .nav {
-    display: flex; gap: 8px; min-width: 250px;
-    padding: 12px 16px 16px;
+    display: flex; gap: 8px; width: calc(var(--mw-open) - 16px); flex-shrink: 0;
+    padding: 14px 20px 18px;
     border-top: 1px dashed #DDD8D1;
     background: var(--paper);
     transition: opacity .2s, transform .35s;
@@ -467,6 +478,7 @@
   @media (max-width: 1100px) {
     .main, .main.folded { grid-template-columns: 1fr; grid-auto-rows: minmax(420px, auto); row-gap: 16px; }
     .main > .mission { margin-right: 0; }
+    .mission-scroll, .nav { width: auto; }
     .splitter, .fold, .size { display: none; }
     .app { height: auto; }
     .topbar { flex-wrap: wrap; }
@@ -492,7 +504,6 @@
 
   <main class="main">
     <section class="panel mission" id="missionPanel">
-      <button class="fold" id="btnFold" title="Replier les missions" aria-label="Replier les missions" aria-expanded="true">←</button>
       <div class="mission-scroll" id="mission" aria-live="polite"></div>
       <div class="nav" id="missionNav"></div>
       <button class="rail" id="btnUnfold" title="Ouvrir les missions" aria-label="Ouvrir les missions" tabindex="-1">
@@ -658,7 +669,7 @@ GALLERY.push({ label: "Stickers", emoji: "✨", stickers: true, items: STICKERS 
    ========================================================= */
 const MISSIONS = [
   {
-    emoji: "👋", title: "Salut le monde !", tab: "html", color: "var(--peach)",
+    emoji: "👋", title: "C’est parti !", tab: "html", color: "var(--peach)",
     intro: "Une page web est faite de <b>balises</b>. Elles vont toujours par deux : une qui ouvre <code>&lt;h1&gt;</code> et une qui ferme <code>&lt;/h1&gt;</code>. <code>h1</code> = le grand titre.",
     snippet: `<h1>Salut, moi c'est Alex !</h1>`,
     task: "Écris un grand titre avec <b>ton prénom</b>, à l'intérieur de la carte.",
@@ -1150,27 +1161,36 @@ function renderDots() {
   });
 }
 
+// typographie française : espace insécable autour de « », et avant : ; ! ?
+// (jamais de guillemet ou de deux-points seul en début ou fin de ligne)
+const nb = t => (t || "").replace(/« /g, "«\u00a0").replace(/ ([»:;!?])/g, "\u00a0$1");
+
 function renderMission() {
   const m = MISSIONS[state.current];
   const n = String(state.current + 1).padStart(2, "0");
   const lang = m.tab === "css" ? "CSS" : "HTML";
   el("mission").innerHTML = `
     <div class="mission-hero" style="background:${m.color}">
-      <span class="emoji">${m.emoji}</span>
-      <span class="kicker" style="color:var(--ink)">${m.sandbox ? "fin" : "mission " + n} · ${lang}</span>
-      <h2>${m.title}</h2>
+      <div class="hero-top">
+        <span class="emoji" aria-hidden="true">${m.emoji}</span>
+        <span class="chapo">${m.sandbox ? "Fin" : "Mission " + n} · ${lang}</span>
+        <button class="fold" id="btnFold" title="Replier les missions" aria-label="Replier les missions" aria-expanded="true">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 5 5 10l5 5M15 5l-5 5 5 5"/></svg>
+        </button>
+      </div>
+      <h2>${nb(m.title)}</h2>
     </div>
-    <p class="intro">${m.intro}</p>
+    <p class="intro">${nb(m.intro)}</p>
     <div>
-      <div class="label" style="margin-bottom:6px">${m.sandbox ? "Défis" : "Exemple"}</div>
-      <div class="snippet"><button class="btn small copy" id="btnCopy">📋 Copier</button><span id="snip"></span></div>
+      <div class="label">${m.sandbox ? "Défis" : "Exemple"}</div>
+      <div class="snippet"><button class="btn copy" id="btnCopy" title="Copier" aria-label="Copier l'exemple">📋</button><span id="snip"></span></div>
     </div>
-    <p class="intro"><b>🎯 À toi :</b> ${m.task}</p>
+    <p class="intro"><b>À toi&nbsp;:</b> ${nb(m.task)}</p>
     ${m.checks.length ? `<div>
-      <div class="label" style="margin-bottom:6px">Ta checklist</div>
+      <div class="label">Ta checklist</div>
       <ul class="checks" id="checks">${m.checks.map(c => `<li><span class="ico">⬜</span><span>${c.label}<span class="why" hidden></span></span></li>`).join("")}</ul>
     </div>` : ""}
-    ${m.tip ? `<div class="tip">${m.tip}</div>` : ""}`;
+    ${m.tip ? `<div class="tip">${nb(m.tip)}</div>` : ""}`;
   el("missionNav").innerHTML = `
     <button class="btn" id="btnPrev" ${state.current === 0 ? "disabled style='visibility:hidden'" : ""}>← Retour</button>
     ${state.current < MISSIONS.length - 1 ? `<button class="btn primary" id="btnNext" disabled>Mission suivante →</button>` : ""}`;
@@ -1183,9 +1203,9 @@ function renderMission() {
   box.classList.add("enter");
   el("snip").textContent = m.snippet;
   el("btnCopy").addEventListener("click", async () => {
-    try { await navigator.clipboard.writeText(m.snippet); el("btnCopy").textContent = "✓ Copié !"; }
-    catch { el("btnCopy").textContent = "Sélectionne et copie"; }
-    setTimeout(() => (el("btnCopy").textContent = "📋 Copier"), 1400);
+    try { await navigator.clipboard.writeText(m.snippet); el("btnCopy").textContent = "✓"; }
+    catch { el("btnCopy").title = "Sélectionne le texte et copie-le"; }
+    setTimeout(() => (el("btnCopy").textContent = "📋"), 1400);
   });
   el("btnPrev")?.addEventListener("click", () => goTo(state.current - 1));
   el("btnNext")?.addEventListener("click", () => goTo(state.current + 1));
@@ -1375,11 +1395,12 @@ if (location.hash === "#reset") {
 const main = document.querySelector(".main");
 function setFolded(folded) {
   main.classList.toggle("folded", folded);
-  el("btnFold").setAttribute("aria-expanded", String(!folded));
+  el("btnFold")?.setAttribute("aria-expanded", String(!folded));
   el("btnUnfold").tabIndex = folded ? 0 : -1;
   try { localStorage.setItem(KEY + ":folded", folded ? "1" : ""); } catch {}
 }
-el("btnFold").addEventListener("click", () => setFolded(true));
+// le bouton est redessiné avec chaque mission : on écoute sur la colonne
+el("mission").addEventListener("click", e => { if (e.target.closest("#btnFold")) setFolded(true); });
 el("btnUnfold").addEventListener("click", () => setFolded(false));
 try { if (localStorage.getItem(KEY + ":folded")) setFolded(true); } catch {}
 
