@@ -249,7 +249,7 @@
     padding: 5px 14px 6px; border-radius: 16px; line-height: 1.15;
   }
   .img-btn .ico { font-size: 18px; line-height: 1.1; transition: transform .25s cubic-bezier(.3, 1.8, .5, 1); }
-  .img-btn small { font-size: 11.5px; font-weight: 600; opacity: .75; }
+  .img-btn small { font-size: 11.5px; font-weight: 500; opacity: .7; } /* comme la 2e ligne des onglets */
   .img-btn:hover .ico { transform: scale(1.18) rotate(-6deg); }
   .tab .ping {
     display: inline-block; width: 8px; height: 8px; border-radius: 50%;
@@ -261,7 +261,20 @@
   .checks .why[hidden] { display: none; }
 
   /* ---------- Galerie d'images ---------- */
-  .modal-card.wide { width: min(760px, 100%); }
+  .modal-card.wide { width: min(760px, 100%); height: min(680px, calc(100vh - 32px)); overflow: hidden; }
+  /* onglets de catégories de la galerie */
+  .cats { display: flex; flex-wrap: wrap; gap: 6px; }
+  .cat {
+    border: 2px solid transparent; border-radius: 999px;
+    padding: 5px 11px; background: var(--soft);
+    font-weight: 700; font-size: 13.5px; white-space: nowrap;
+    transition: transform .2s cubic-bezier(.3, 1.8, .5, 1), background .15s;
+  }
+  .cat:hover { transform: translateY(-2px); }
+  .cat small { font-weight: 500; opacity: .6; margin-left: 4px; }
+  .cat[aria-selected="true"] { background: var(--yellow); border-color: var(--ink); box-shadow: 3px 3px 0 var(--ink); }
+  .gallery-scroll { flex: 1; min-height: 0; overflow: auto; margin: 0 -6px; padding: 4px 6px 6px; }
+  .gallery .pick { animation: rise .4s cubic-bezier(.2, 1.2, .4, 1) both; animation-delay: calc(var(--i) * 18ms); }
   .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 10px; }
   .gallery.stickers { grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); }
   .pick {
@@ -540,10 +553,8 @@
     <span class="kicker">galerie</span>
     <h2 id="imagesTitle">Choisis une image 🖼️</h2>
     <p>Clique sur une image : sa balise <code>&lt;img&gt;</code> s'ajoute dans ton HTML, <b>là où se trouve ton curseur</b>.</p>
-    <div class="label">Photos</div>
-    <div class="gallery" id="galleryPhotos"></div>
-    <div class="label">Stickers</div>
-    <div class="gallery stickers" id="galleryStickers"></div>
+    <div class="cats" id="galleryCats" role="tablist" aria-label="Catégories d'images"></div>
+    <div class="gallery-scroll"><div class="gallery" id="gallery" role="tabpanel"></div></div>
   </div>
 </div>
 
@@ -608,23 +619,30 @@ const linksTo = s => [...parseHtml(s).querySelectorAll("a[href]")].map(a => page
    Photos : Unsplash (licence Unsplash) · Stickers : OpenMoji (CC BY-SA 4.0)
    ========================================================= */
 const asset = path => new URL(path, location.href).href;
-const PHOTOS = [
-  // animaux
-  ["chat", "chat"], ["chien", "chien"], ["lapin", "lapin"], ["panda", "panda"], ["cheval", "cheval"], ["renard", "renard"],
-  ["tortue", "tortue"], ["koala", "koala"], ["tigre", "tigre"], ["lion", "lion"], ["éléphant", "elephant"], ["pingouin", "pingouin"],
-  // miam
-  ["pizza", "pizza"], ["donut", "donut"], ["glace", "glace"], ["burger", "burger"], ["sushi", "sushi"], ["fraises", "fraises"],
-  ["macarons", "macarons"], ["pancakes", "pancakes"], ["chocolat", "chocolat"],
-  // sport
-  ["volley", "volley"], ["basket", "basket"], ["foot", "foot"], ["tennis", "tennis"], ["natation", "natation"], ["skate", "skate"],
-  ["vélo", "velo"], ["ski", "ski"], ["danse", "danse"],
-  // loisirs
-  ["musique", "musique"], ["guitare", "guitare"], ["piano", "piano"], ["concert", "concert"], ["jeux vidéo", "jeux-video"], ["livres", "livres"],
-  ["peinture", "peinture"], ["photo", "photo"], ["cinéma", "cinema"], ["mode", "mode"], ["robot", "robot"], ["code", "code"],
-  // lieux
-  ["montagne", "montagne"], ["plage", "plage"], ["vagues", "vagues"], ["forêt", "foret"], ["coucher de soleil", "coucher-de-soleil"], ["fleurs", "fleurs"],
-  ["espace", "espace"], ["ville", "ville"], ["Paris", "paris"], ["New York", "new-york"], ["Japon", "japon"],
-].map(([alt, file]) => ({ alt, src: asset(`img/${file}.jpg`) }));
+const photos = list => list.map(([alt, file]) => ({ alt, src: asset(`img/${file}.jpg`) }));
+// les onglets de la galerie, dans l'ordre
+const GALLERY = [
+  { label: "Animaux", emoji: "🐾", items: photos([
+    ["chat", "chat"], ["chien", "chien"], ["lapin", "lapin"], ["panda", "panda"], ["cheval", "cheval"], ["renard", "renard"],
+    ["tortue", "tortue"], ["koala", "koala"], ["tigre", "tigre"], ["lion", "lion"], ["éléphant", "elephant"], ["pingouin", "pingouin"],
+  ]) },
+  { label: "Miam", emoji: "🍕", items: photos([
+    ["pizza", "pizza"], ["donut", "donut"], ["glace", "glace"], ["burger", "burger"], ["sushi", "sushi"], ["fraises", "fraises"],
+    ["macarons", "macarons"], ["pancakes", "pancakes"], ["chocolat", "chocolat"],
+  ]) },
+  { label: "Sport", emoji: "⚽", items: photos([
+    ["volley", "volley"], ["basket", "basket"], ["foot", "foot"], ["tennis", "tennis"], ["natation", "natation"], ["skate", "skate"],
+    ["vélo", "velo"], ["ski", "ski"], ["danse", "danse"],
+  ]) },
+  { label: "Loisirs", emoji: "🎸", items: photos([
+    ["musique", "musique"], ["guitare", "guitare"], ["piano", "piano"], ["concert", "concert"], ["jeux vidéo", "jeux-video"], ["livres", "livres"],
+    ["peinture", "peinture"], ["photo", "photo"], ["cinéma", "cinema"], ["mode", "mode"], ["robot", "robot"], ["code", "code"],
+  ]) },
+  { label: "Lieux", emoji: "🌍", items: photos([
+    ["montagne", "montagne"], ["plage", "plage"], ["vagues", "vagues"], ["forêt", "foret"], ["coucher de soleil", "coucher-de-soleil"], ["fleurs", "fleurs"],
+    ["espace", "espace"], ["ville", "ville"], ["Paris", "paris"], ["New York", "new-york"], ["Japon", "japon"],
+  ]) },
+];
 const STICKERS = [
   ["chat", "chat"], ["chien", "chien"], ["panda", "panda"], ["renard", "renard"], ["tortue", "tortue"], ["licorne", "licorne"], ["papillon", "papillon"], ["fleur", "fleur"],
   ["étoile", "etoile"], ["cœur", "coeur"], ["étincelles", "etincelles"], ["arc-en-ciel", "arc-en-ciel"], ["soleil", "soleil"], ["lune", "lune"], ["terre", "terre"], ["éclair", "eclair"],
@@ -632,6 +650,7 @@ const STICKERS = [
   ["pizza", "pizza"], ["donut", "donut"], ["glace", "glace"], ["fraise", "fraise"], ["pastèque", "pasteque"], ["manette", "manette"], ["casque", "casque"], ["note de musique", "musique"],
   ["guitare", "guitare"], ["palette", "palette"], ["appareil photo", "appareil-photo"], ["volley", "volley"], ["ballon de foot", "foot"], ["basket", "basket"], ["tennis", "tennis"], ["skate", "skate"],
 ].map(([alt, file]) => ({ alt, src: asset(`img/stickers/${file}.svg`) }));
+GALLERY.push({ label: "Stickers", emoji: "✨", stickers: true, items: STICKERS });
 
 /* =========================================================
    Missions
@@ -676,7 +695,7 @@ const MISSIONS = [
   {
     emoji: "🖼️", title: "Une image et un lien", tab: "html", color: "var(--peach)",
     intro: "Certaines balises ont des <b>attributs</b> : des infos en plus. <code>src</code> dit où trouver l'image, <code>href</code> dit où mène le lien. <code>&lt;img&gt;</code> n'a pas de balise fermante.",
-    snippet: `<img src="${PHOTOS[0].src}" alt="Un chat">
+    snippet: `<img src="${GALLERY[0].items[0].src}" alt="Un chat">
 
 <a href="https://www.youtube.com">Ma chaîne préférée</a>`,
     task: "Ajoute une <b>image</b> et un <b>lien</b> vers un site que tu aimes. Pour choisir une image, clique sur <b>🖼️ Images</b> au-dessus de ton code : elle s'ajoute là où se trouve ton curseur.",
@@ -1284,16 +1303,29 @@ let htmlCaret = null, imgTarget = "html";
   imgTarget = k;
   htmlCaret = [ta.selectionStart, ta.selectionEnd];
 }));
-function fillGallery(box, items) {
+let galleryCat = 0;
+function renderCats() {
+  el("galleryCats").innerHTML = GALLERY.map((c, i) =>
+    `<button class="cat" role="tab" aria-selected="${i === galleryCat}" data-i="${i}">${c.emoji} ${c.label}<small>${c.items.length}</small></button>`).join("");
+  el("galleryCats").querySelectorAll(".cat").forEach(b => b.addEventListener("click", () => showCat(+b.dataset.i)));
+}
+function showCat(i) {
+  galleryCat = i;
+  const cat = GALLERY[i];
+  const box = el("gallery");
+  box.classList.toggle("stickers", !!cat.stickers);
   box.innerHTML = "";
-  items.forEach(({ alt, src }) => {
+  cat.items.forEach(({ alt, src }, n) => {
     const b = document.createElement("button");
     b.className = "pick";
+    b.style.setProperty("--i", Math.min(n, 24)); // apparition en cascade
     b.innerHTML = `<img src="${src}" alt="" loading="lazy"><span>${alt}</span>`;
     b.title = alt;
     b.addEventListener("click", () => insertImage(src, alt));
     box.appendChild(b);
   });
+  box.parentElement.scrollTop = 0;
+  renderCats();
 }
 function insertImage(src, alt) {
   const tag = `<img src="${src}" alt="${alt}">`;
@@ -1318,10 +1350,7 @@ function insertImage(src, alt) {
   htmlCaret = [ta.selectionEnd, ta.selectionEnd];
 }
 el("btnImages").addEventListener("click", () => {
-  if (!el("galleryPhotos").children.length) {
-    fillGallery(el("galleryPhotos"), PHOTOS);
-    fillGallery(el("galleryStickers"), STICKERS);
-  }
+  showCat(galleryCat); // rouvre sur la dernière catégorie choisie
   el("images").classList.add("on");
 });
 el("btnImagesClose").addEventListener("click", () => el("images").classList.remove("on"));
