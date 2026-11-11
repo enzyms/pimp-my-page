@@ -92,12 +92,21 @@
   .btn.primary:hover { background: var(--red-dark); }
   .btn.small { padding: 6px 12px; font-size: 13px; }
 
+  /* colonnes : missions · éditeur · poignée · aperçu
+     --mw : largeur des missions (repliable) · --pw : largeur de l'aperçu (poignée) */
   .main {
+    --mw: clamp(320px, 27vw, 380px);
     min-height: 0;
     display: grid;
-    grid-template-columns: minmax(300px, 360px) 1fr 1fr;
-    gap: 16px;
+    grid-template-columns: var(--mw) minmax(260px, 1fr) 18px minmax(336px, var(--pw, 1fr));
+    column-gap: 0;
+    transition: grid-template-columns .45s cubic-bezier(.5, 1.3, .4, 1);
   }
+  .main.folded { --mw: 80px; } /* 64px de rail + 16px d'écart */
+  .main > .mission { margin-right: 16px; }
+  body.dragging .main { transition: none; }
+  body.dragging, body.dragging * { cursor: col-resize !important; user-select: none; }
+  body.dragging iframe { pointer-events: none; }
   .panel {
     background: var(--paper);
     border-radius: var(--radius-xl);
@@ -108,7 +117,57 @@
   }
 
   /* ---------- Mission ---------- */
-  .mission { overflow: auto; gap: 14px; }
+  .mission { position: relative; overflow: hidden; padding: 0; }
+  .mission-scroll {
+    flex: 1; min-height: 0; min-width: 250px;
+    overflow: auto;
+    display: flex; flex-direction: column; gap: 14px;
+    padding: 20px 20px 12px;
+    transition: opacity .2s, transform .35s;
+  }
+  /* le contenu d'une nouvelle mission arrive en cascade */
+  .mission-scroll.enter > * { animation: rise .45s cubic-bezier(.2, 1.2, .4, 1) both; }
+  .mission-scroll.enter > :nth-child(2) { animation-delay: .04s; }
+  .mission-scroll.enter > :nth-child(3) { animation-delay: .08s; }
+  .mission-scroll.enter > :nth-child(4) { animation-delay: .12s; }
+  .mission-scroll.enter > :nth-child(n+5) { animation-delay: .16s; }
+  @keyframes rise { from { opacity: 0; transform: translateY(14px); } }
+  .mission-hero { position: relative; }
+  .fold {
+    position: absolute; top: 30px; right: 30px; z-index: 1;
+    width: 34px; height: 34px; padding: 0;
+    border: 2px solid var(--ink); border-radius: 50%;
+    background: var(--paper); font-weight: 800;
+    display: grid; place-items: center;
+    transition: transform .2s cubic-bezier(.3, 1.6, .5, 1);
+  }
+  .fold:hover { transform: translateX(-3px) rotate(-8deg); }
+  /* colonne repliée : un rail vertical « Missions » sur toute la hauteur */
+  .rail {
+    position: absolute; inset: 0;
+    border: 0; border-radius: inherit;
+    background: var(--paper);
+    display: flex; flex-direction: column; align-items: center; gap: 14px;
+    padding: 18px 0;
+    opacity: 0; pointer-events: none;
+    transform: translateX(-12px);
+    transition: opacity .25s, transform .35s cubic-bezier(.3, 1.4, .5, 1), background .15s;
+  }
+  .rail:hover { background: var(--soft); }
+  .rail .rail-emoji {
+    width: 40px; height: 40px; border-radius: 50%;
+    display: grid; place-items: center; font-size: 22px;
+    border: 2px solid var(--ink); box-shadow: 3px 3px 0 var(--ink);
+  }
+  .rail .rail-text {
+    writing-mode: vertical-rl; transform: rotate(180deg);
+    font-size: 22px; font-weight: 800; letter-spacing: .04em;
+  }
+  .rail .rail-text small { font-size: 14px; font-weight: 600; color: var(--muted); margin-top: 10px; }
+  .rail .rail-open { margin-top: auto; font-size: 20px; font-weight: 800; transition: transform .2s; }
+  .rail:hover .rail-open { transform: translateX(4px); }
+  .main.folded .rail { opacity: 1; pointer-events: auto; transform: none; transition-delay: .12s; }
+  .main.folded .mission-scroll, .main.folded .nav, .main.folded .fold { opacity: 0; pointer-events: none; transform: translateX(-24px); }
   .mission-hero {
     border-radius: var(--radius-l);
     padding: 18px 18px 16px;
@@ -152,9 +211,18 @@
   details.help summary { cursor: pointer; font-weight: 700; color: var(--red); list-style: none; }
   details.help summary::-webkit-details-marker { display: none; }
   details.help[open] summary { margin-bottom: 8px; }
-  .nav { display: flex; gap: 8px; margin-top: auto; padding-top: 6px; }
+  /* Retour / Mission suivante : toujours visibles, collés en bas de la colonne */
+  .nav {
+    display: flex; gap: 8px; min-width: 250px;
+    padding: 12px 16px 16px;
+    border-top: 1px dashed #DDD8D1;
+    background: var(--paper);
+    transition: opacity .2s, transform .35s;
+  }
   .nav .btn.primary { margin-left: auto; }
   .nav .btn.primary[disabled] { background: #D8D4CE; color: #8a857e; cursor: not-allowed; transform: none; }
+  .nav .btn.primary.ready { animation: ready .6s cubic-bezier(.3, 1.8, .5, 1); }
+  @keyframes ready { 0% { transform: scale(.9); } 50% { transform: scale(1.12) rotate(-2deg); } 100% { transform: none; } }
 
   /* ---------- Editor ---------- */
   .editor { gap: 12px; }
@@ -242,7 +310,9 @@
   .skel .lock { position: absolute; top: 9px; right: 12px; font-family: var(--font); font-size: 11.5px; font-weight: 600; }
 
   /* ---------- Preview (browser window) ---------- */
-  .preview { padding: 22px 26px 26px 20px; }
+  /* l'aperçu n'a pas de boîte blanche : le faux navigateur suffit
+     (un peu de place à droite et en bas pour son ombre) */
+  .panel.preview { background: none; border-radius: 0; padding: 0 8px 8px 0; }
   .browser {
     flex: 1; min-height: 0;
     display: flex; flex-direction: column;
@@ -258,17 +328,48 @@
     background: var(--soft);
     border-bottom: var(--line);
   }
-  .browser-bar i { width: 11px; height: 11px; border-radius: 50%; display: block; }
+  .browser-bar i { flex: none; width: 11px; height: 11px; border-radius: 50%; display: block; }
   .browser-bar i:nth-child(1) { background: var(--red); }
   .browser-bar i:nth-child(2) { background: var(--yellow); }
   .browser-bar i:nth-child(3) { background: #8DB255; }
   .url {
-    flex: 1; margin-left: 10px;
+    flex: 1; min-width: 0; margin-left: 10px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     background: var(--paper); border-radius: 999px;
     padding: 4px 14px; font-size: 13px; color: var(--muted); text-align: center;
   }
   .browser iframe { flex: 1; border: 0; width: 100%; background: #fff; }
-  .preview-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  /* largeur de l'aperçu, pour tester le responsive */
+  .size {
+    margin-left: 4px;
+    font-family: var(--mono); font-size: 12.5px; font-weight: 700;
+    background: var(--soft); border-radius: 999px; padding: 4px 10px;
+    white-space: nowrap; flex: none;
+    transition: background .2s, transform .25s cubic-bezier(.3, 1.8, .5, 1), box-shadow .2s;
+  }
+  body.dragging .size { background: var(--yellow); transform: scale(1.08); box-shadow: 3px 3px 0 var(--ink); }
+
+  /* ---------- Poignée entre l'éditeur et l'aperçu ---------- */
+  .splitter {
+    position: relative;
+    display: grid; place-items: center;
+    cursor: col-resize; touch-action: none;
+    border-radius: 999px; outline: 0;
+  }
+  .splitter::before {
+    content: ""; width: 6px; height: 56px; border-radius: 999px;
+    background: #CFC9C1;
+    transition: height .3s cubic-bezier(.3, 1.6, .5, 1), background .15s, width .2s;
+  }
+  .splitter:hover::before, .splitter:focus-visible::before { background: var(--ink); height: 96px; }
+  body.dragging .splitter::before { background: var(--red); width: 8px; height: 140px; }
+  .splitter .hint {
+    position: absolute; top: calc(50% + 62px); left: 50%;
+    transform: translateX(-50%) scale(.6); opacity: 0;
+    font-size: 15px; pointer-events: none;
+    transition: opacity .2s, transform .3s cubic-bezier(.3, 1.8, .5, 1);
+  }
+  .splitter:hover .hint { opacity: 1; transform: translateX(-50%) scale(1); }
 
   /* ---------- Fullscreen preview ---------- */
   .stage {
@@ -337,12 +438,13 @@
 
   .brand strong, .tab { white-space: nowrap; }
   @media (max-width: 1500px) {
-    .brand .kicker, .preview-head .kicker { display: none; }
     .dot { width: 30px; height: 30px; font-size: 12px; }
     .dots { gap: 5px; flex-wrap: nowrap; }
   }
   @media (max-width: 1100px) {
-    .main { grid-template-columns: 1fr; grid-auto-rows: minmax(420px, auto); }
+    .main, .main.folded { grid-template-columns: 1fr; grid-auto-rows: minmax(420px, auto); row-gap: 16px; }
+    .main > .mission { margin-right: 0; }
+    .splitter, .fold, .size { display: none; }
     .app { height: auto; }
     .topbar { flex-wrap: wrap; }
   }
@@ -355,8 +457,7 @@
 <div class="app">
   <header class="topbar">
     <div class="brand">
-      <strong>&lt;/&gt; Pimp My Page</strong>
-      <span class="kicker">futur-en-tous-genres · atelier dev frontend</span>
+      <strong>Pimp My Page</strong>
     </div>
     <nav class="dots" id="dots" aria-label="Missions"></nav>
     <div class="actions">
@@ -367,7 +468,16 @@
   </header>
 
   <main class="main">
-    <section class="panel mission" id="mission" aria-live="polite"></section>
+    <section class="panel mission" id="missionPanel">
+      <button class="fold" id="btnFold" title="Replier les missions" aria-label="Replier les missions" aria-expanded="true">←</button>
+      <div class="mission-scroll" id="mission" aria-live="polite"></div>
+      <div class="nav" id="missionNav"></div>
+      <button class="rail" id="btnUnfold" title="Ouvrir les missions" aria-label="Ouvrir les missions" tabindex="-1">
+        <span class="rail-emoji" id="railEmoji"></span>
+        <span class="rail-text">Missions <small id="railNum"></small></span>
+        <span class="rail-open">→</span>
+      </button>
+    </section>
 
     <section class="panel editor">
       <div class="tabs" role="tablist">
@@ -388,13 +498,11 @@
       </div>
     </section>
 
-    <section class="panel preview">
-      <div class="preview-head">
-        <span class="label">Aperçu en direct</span>
-        <span class="kicker">ça se met à jour quand tu tapes</span>
-      </div>
+    <div class="splitter" id="splitter" role="separator" aria-orientation="vertical" aria-label="Largeur de l'aperçu" tabindex="0" title="Glisse pour changer la largeur de l'aperçu · double-clic pour revenir"><span class="hint">↔</span></div>
+
+    <section class="panel preview" aria-label="Aperçu en direct">
       <div class="browser">
-        <div class="browser-bar"><i></i><i></i><i></i><div class="url">www.ma-page.ch</div></div>
+        <div class="browser-bar"><i></i><i></i><i></i><div class="url">www.ma-page.ch</div><span class="size" id="previewSize" title="Largeur de la page : glisse la poignée à gauche pour tester ta page sur un natel">💻 – px</span></div>
         <iframe id="preview" title="Aperçu de ta carte"></iframe>
       </div>
     </section>
@@ -959,6 +1067,7 @@ function runChecks() {
   });
   const allOk = m.checks.length > 0 && results.every(r => r === true);
   const next = el("btnNext");
+  const wasLocked = next?.disabled;
   if (next) next.disabled = !(allOk || m.checks.length === 0 || state.done.has(state.current));
   if (allOk && !state.done.has(state.current)) {
     state.done.add(state.current);
@@ -967,6 +1076,7 @@ function runChecks() {
     renderDots();
     if (next) next.disabled = false;
   }
+  if (next && wasLocked && !next.disabled) next.classList.add("ready");
 }
 
 /* =========================================================
@@ -1006,11 +1116,17 @@ function renderMission() {
       <div class="label" style="margin-bottom:6px">Ta checklist</div>
       <ul class="checks" id="checks">${m.checks.map(c => `<li><span class="ico">⬜</span><span>${c.label}<span class="why" hidden></span></span></li>`).join("")}</ul>
     </div>` : ""}
-    ${m.tip ? `<div class="tip">${m.tip}</div>` : ""}
-    <div class="nav">
-      <button class="btn" id="btnPrev" ${state.current === 0 ? "disabled style='visibility:hidden'" : ""}>← Retour</button>
-      ${state.current < MISSIONS.length - 1 ? `<button class="btn primary" id="btnNext" disabled>Mission suivante →</button>` : ""}
-    </div>`;
+    ${m.tip ? `<div class="tip">${m.tip}</div>` : ""}`;
+  el("missionNav").innerHTML = `
+    <button class="btn" id="btnPrev" ${state.current === 0 ? "disabled style='visibility:hidden'" : ""}>← Retour</button>
+    ${state.current < MISSIONS.length - 1 ? `<button class="btn primary" id="btnNext" disabled>Mission suivante →</button>` : ""}`;
+  el("railEmoji").textContent = m.emoji;
+  el("railEmoji").style.background = m.color;
+  el("railNum").textContent = m.sandbox ? "· fin" : "· " + n;
+  const box = el("mission");
+  box.classList.remove("enter");
+  void box.offsetWidth; // relance l'animation d'entrée
+  box.classList.add("enter");
   el("snip").textContent = m.snippet;
   el("btnCopy").addEventListener("click", async () => {
     try { await navigator.clipboard.writeText(m.snippet); el("btnCopy").textContent = "✓ Copié !"; }
@@ -1187,6 +1303,65 @@ if (location.hash === "#reset") {
   try { localStorage.removeItem(KEY); } catch {}
   location.replace(location.pathname);
 }
+
+/* =========================================================
+   Colonne des missions repliable
+   ========================================================= */
+const main = document.querySelector(".main");
+function setFolded(folded) {
+  main.classList.toggle("folded", folded);
+  el("btnFold").setAttribute("aria-expanded", String(!folded));
+  el("btnUnfold").tabIndex = folded ? 0 : -1;
+  try { localStorage.setItem(KEY + ":folded", folded ? "1" : ""); } catch {}
+}
+el("btnFold").addEventListener("click", () => setFolded(true));
+el("btnUnfold").addEventListener("click", () => setFolded(false));
+try { if (localStorage.getItem(KEY + ":folded")) setFolded(true); } catch {}
+
+/* =========================================================
+   Poignée : glisser pour changer la largeur de l'aperçu (tester le responsive)
+   ========================================================= */
+const splitter = el("splitter");
+const SPLIT = { minPreview: 336, minEditor: 260 }; // 336 px → page de 320 px, le plus petit natel
+function setPreviewWidth(px) {
+  if (px == null) { main.style.removeProperty("--pw"); return; }
+  const r = main.getBoundingClientRect();
+  const missionW = el("missionPanel").getBoundingClientRect().width + 16;
+  const max = r.width - missionW - splitter.offsetWidth - SPLIT.minEditor;
+  main.style.setProperty("--pw", Math.round(Math.max(SPLIT.minPreview, Math.min(max, px))) + "px");
+}
+splitter.addEventListener("pointerdown", e => {
+  e.preventDefault();
+  splitter.setPointerCapture(e.pointerId);
+  document.body.classList.add("dragging");
+  const right = main.getBoundingClientRect().right;
+  const move = ev => setPreviewWidth(right - ev.clientX - splitter.offsetWidth / 2);
+  const up = () => {
+    document.body.classList.remove("dragging");
+    splitter.removeEventListener("pointermove", move);
+    splitter.removeEventListener("pointerup", up);
+    splitter.removeEventListener("pointercancel", up);
+  };
+  splitter.addEventListener("pointermove", move);
+  splitter.addEventListener("pointerup", up);
+  splitter.addEventListener("pointercancel", up);
+});
+splitter.addEventListener("dblclick", () => setPreviewWidth(null));
+splitter.addEventListener("keydown", e => {
+  const step = e.shiftKey ? 80 : 20;
+  const pw = document.querySelector(".preview").getBoundingClientRect().width;
+  if (e.key === "ArrowLeft") { e.preventDefault(); setPreviewWidth(pw + step); }
+  if (e.key === "ArrowRight") { e.preventDefault(); setPreviewWidth(pw - step); }
+});
+// si la fenêtre rétrécit, l'aperçu reste dans les limites
+addEventListener("resize", () => { if (main.style.getPropertyValue("--pw")) setPreviewWidth(parseFloat(main.style.getPropertyValue("--pw"))); });
+
+// la largeur réelle de la page dans l'aperçu, comme dans les outils de dev
+const device = w => (w < 600 ? "📱" : w < 1000 ? "📟" : "💻");
+new ResizeObserver(() => {
+  const w = Math.round(frame.getBoundingClientRect().width);
+  el("previewSize").textContent = `${device(w)} ${w} px`;
+}).observe(frame);
 
 /* =========================================================
    Démarrage
