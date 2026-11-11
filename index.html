@@ -200,7 +200,7 @@
   .stickers .pick span { display: none; }
   .code-wrap {
     flex: 1; min-height: 0;
-    display: flex;
+    display: flex; flex-direction: column;
     border-radius: var(--radius-l);
     background: var(--soft);
     overflow: hidden;
@@ -225,6 +225,21 @@
     overflow: auto;
   }
   textarea.code[hidden] { display: none; }
+  .code-row { flex: 1; min-height: 0; display: flex; }
+  /* squelette de la page : déjà écrit, en lecture seule, pour voir où va le code */
+  .skel {
+    position: relative;
+    margin: 0; padding: 8px 16px;
+    font-family: var(--mono); font-size: 13px; line-height: 1.45;
+    color: #A9A39B; background: #EAE7E2;
+    white-space: pre; overflow: hidden;
+    user-select: none; cursor: default;
+  }
+  .skel:empty { display: none; }
+  .skel-top { border-bottom: 1px dashed #CFC9C1; padding-top: 10px; }
+  .skel-bottom { border-top: 1px dashed #CFC9C1; padding-bottom: 10px; }
+  .skel .link { color: var(--ink); background: var(--lilac); border-radius: 6px; padding: 1px 4px; margin: 0 -4px; }
+  .skel .lock { position: absolute; top: 9px; right: 12px; font-family: var(--font); font-size: 11.5px; font-weight: 600; }
 
   /* ---------- Preview (browser window) ---------- */
   .preview { padding: 22px 26px 26px 20px; }
@@ -358,14 +373,18 @@
       <div class="tabs" role="tablist">
         <button class="tab" role="tab" data-tab="html" aria-selected="true" title="index.html"><span>HTML<span class="ping"></span></span><small>page 1</small></button>
         <button class="tab" role="tab" data-tab="page2" aria-selected="false" title="page2.html" hidden><span>HTML<span class="ping"></span></span><small>page 2</small></button>
-        <button class="tab" role="tab" data-tab="css" aria-selected="false"><span>CSS<span class="ping"></span></span><small>le style</small></button>
+        <button class="tab" role="tab" data-tab="css" aria-selected="false" title="style.css"><span>CSS<span class="ping"></span></span><small>style.css</small></button>
         <button class="btn small" id="btnImages" style="margin-left:auto">🖼️ Images</button>
       </div>
       <div class="code-wrap">
+        <pre class="skel skel-top" id="skelTop" title="Ces lignes sont déjà écrites pour toi"></pre>
+        <div class="code-row">
         <div class="gutter" id="gutter">1</div>
         <textarea class="code" id="code-html" spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="Code HTML"></textarea>
         <textarea class="code" id="code-page2" spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="Code HTML de la page 2" hidden></textarea>
         <textarea class="code" id="code-css" spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="Code CSS" hidden></textarea>
+        </div>
+        <pre class="skel skel-bottom" id="skelBottom" title="Ces lignes sont déjà écrites pour toi"></pre>
       </div>
     </section>
 
@@ -666,7 +685,7 @@ h1 {
   },
   {
     emoji: "🔗", title: "Bonus : une 2e page", tab: "page2", color: "var(--yellow)", bonus: true,
-    intro: "Un site, c'est plusieurs pages reliées par des <b>liens</b>. Ta page 1 s'appelle <code>index.html</code> : c'est toujours le nom de la page d'accueil. Un nouvel onglet est apparu : <b>HTML page 2</b>, le fichier <code>page2.html</code>. Le CSS est partagé : tes deux pages auront le même style !",
+    intro: "Un site, c'est plusieurs pages reliées par des <b>liens</b>. Ta page 1 s'appelle <code>index.html</code> : c'est toujours le nom de la page d'accueil. Un nouvel onglet est apparu : <b>HTML page 2</b>, le fichier <code>page2.html</code>. Regarde la ligne <code>&lt;link&gt;</code> en gris en haut de chaque page : les deux chargent le même <code>style.css</code>. Elles auront donc le même style !",
     snippet: `<!-- dans l'onglet page 1 (index.html) -->
 <a href="page2.html">Mes passions →</a>
 
@@ -733,12 +752,32 @@ function setTab(tab) {
   state.tab = tab;
   document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", String(t.dataset.tab === tab)));
   for (const [k, ta] of Object.entries(editors)) ta.hidden = k !== tab;
+  renderSkeleton(tab);
   updateGutter();
   activeTa().focus({ preventScroll: true });
   // l'aperçu suit la page HTML qu'on édite
   if (tab !== "css" && state.view !== tab) { state.view = tab; render(); }
 }
 const activeTa = () => editors[state.tab];
+
+/* ---------- Le squelette autour du code ----------
+   Une vraie page a toujours <html>, <head> et <body>. On les montre en gris,
+   sans pouvoir les modifier : on voit où va son code, et que chaque page
+   charge le même style.css avec <link>. */
+const esc = t => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+const LOCK = `<span class="lock">🔒 déjà écrit pour toi</span>`;
+const LINK = `<span class="link">${esc('<link rel="stylesheet" href="style.css">')}</span>`;
+function renderSkeleton(tab) {
+  if (tab === "css") {
+    // ligne courte, sans cadenas : elle doit tenir sur un écran de laptop
+    const pages = state.page2 === null ? "la page 1" : "la page 1 et la page 2";
+    el("skelTop").innerHTML = esc(`/* style.css · pour ${pages} */`);
+    el("skelBottom").innerHTML = "";
+    return;
+  }
+  el("skelTop").innerHTML = [esc("<!doctype html>"), esc("<html>"), esc("<head>"), "  " + LINK, esc("</head>"), esc("<body>")].join("\n") + LOCK;
+  el("skelBottom").innerHTML = esc("</body>\n</html>");
+}
 document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => setTab(t.dataset.tab)));
 
 /* ---------- La 2e page apparaît avec sa mission ---------- */
