@@ -878,7 +878,7 @@ const LOCK = `<span class="lock">🔒 déjà écrit pour toi</span>`;
 const LINK = `<span class="link">${esc('<link rel="stylesheet" href="style.css">')}</span>`;
 function renderSkeleton(tab) {
   // caché pendant les missions de base : on ne le découvre qu'avec le bonus « 2e page »
-  if (state.page2 === null) { el("skelTop").innerHTML = el("skelBottom").innerHTML = ""; return; }
+  if (!page2On()) { el("skelTop").innerHTML = el("skelBottom").innerHTML = ""; return; }
   if (tab === "css") {
     // ligne courte, sans cadenas : elle doit tenir sur un écran de laptop
     el("skelTop").innerHTML = esc("/* style.css · pour la page 1 et la page 2 */");
@@ -891,8 +891,13 @@ function renderSkeleton(tab) {
 document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => setTab(t.dataset.tab)));
 
 /* ---------- La 2e page apparaît avec sa mission ---------- */
+// la page 2 (et le squelette) n'existent qu'à partir de la mission bonus « 2e page » :
+// en revenant aux missions d'avant, tout disparaît (le code de la page 2 reste gardé)
+const PAGE2_FROM = MISSIONS.findIndex(m => m.tab === "page2");
+const page2On = () => state.page2 !== null && state.current >= PAGE2_FROM;
 function syncPage2Tab() {
-  const two = state.page2 !== null;
+  const two = page2On();
+  if (!two && state.tab === "page2") setTab("html");
   document.querySelector('.tab[data-tab="page2"]').hidden = !two;
   // le nom de fichier n'apparaît qu'avec le bonus, comme le squelette
   document.querySelector('.tab[data-tab="css"] small').textContent = two ? "style.css" : "le style";
@@ -1003,7 +1008,7 @@ function hookLinks(iframe, goPage) {
 }
 // dans l'éditeur : un lien change la page affichée (et l'onglet, sauf si on est dans le CSS)
 function goPage(page) {
-  if (page === "page2" && state.page2 === null) return;
+  if (page === "page2" && !page2On()) return;
   if (page === "page2") state.visited = true;
   if (state.tab !== "css") setTab(page);
   if (state.view !== page) { state.view = page; render(); }
@@ -1154,6 +1159,7 @@ function renderMission() {
 function goTo(i) {
   state.current = Math.max(0, Math.min(MISSIONS.length - 1, i));
   if (MISSIONS[state.current].tab === "page2") ensurePage2();
+  syncPage2Tab();
   persist();
   renderDots();
   renderMission();
@@ -1274,7 +1280,7 @@ function insertImage(src, alt) {
   const tag = `<img src="${src}" alt="${alt}">`;
   // le curseur mémorisé ne vaut que pour la page où il a été pris
   if (state.tab !== "css" && state.tab !== imgTarget) { imgTarget = state.tab; htmlCaret = null; }
-  if (imgTarget === "page2" && state.page2 === null) { imgTarget = "html"; htmlCaret = null; }
+  if (imgTarget === "page2" && !page2On()) { imgTarget = "html"; htmlCaret = null; }
   const ta = editors[imgTarget];
   const v = ta.value;
   let [s, e] = htmlCaret || [v.length, v.length];
