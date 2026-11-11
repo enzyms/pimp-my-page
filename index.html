@@ -557,11 +557,8 @@
 /* =========================================================
    Code de départ
    ========================================================= */
-const START_HTML = `<!-- Tout ce que tu écris ici apparaît à droite 👉 -->
-<div class="carte">
-
-  <!-- Écris ton code entre ces deux lignes -->
-
+const START_HTML = `<div class="carte">
+  
 </div>
 `;
 
@@ -577,11 +574,8 @@ img {
 }
 `;
 
-const START_PAGE2 = `<!-- Ta 2e page ! Elle utilise le même CSS que la première ✨ -->
-<div class="carte">
-
-  <!-- Écris ton code entre ces deux lignes -->
-
+const START_PAGE2 = `<div class="carte">
+  
 </div>
 `;
 
@@ -906,6 +900,8 @@ function syncPage2Tab() {
 function ensurePage2() {
   if (state.page2 !== null) return;
   state.page2 = taPage2.value = START_PAGE2;
+  const at = START_PAGE2.indexOf("\n") + 3;
+  taPage2.setSelectionRange(at, at);
   persist();
   syncPage2Tab();
   // petite entrée animée pour ce qui vient d'apparaître
@@ -1388,6 +1384,9 @@ renderDots();
 renderMission();
 setTab(MISSIONS[state.current].sandbox ? "css" : MISSIONS[state.current].tab);
 render();
+// page encore vide : le curseur attend déjà à l'intérieur de la carte
+for (const [ta, start] of [[taHtml, START_HTML], [taPage2, START_PAGE2]])
+  if (ta.value === start) { const at = start.indexOf("\n") + 3; ta.setSelectionRange(at, at); }
 
 /* ---------- Mode « vue » : quelqu'un ouvre un lien partagé ---------- */
 if (location.hash.startsWith("#c=")) {
