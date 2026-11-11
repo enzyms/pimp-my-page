@@ -1224,7 +1224,7 @@ function renderMission() {
     </div>
     <p class="intro"><b>À toi&nbsp;:</b> ${nb(m.task)}</p>
     ${m.checks.length ? `<div>
-      <div class="label">Ta checklist</div>
+      <div class="label">Ta mission</div>
       <ul class="checks" id="checks">${m.checks.map(c => `<li><span class="ico">⬜</span><span>${c.label}<span class="why" hidden></span></span></li>`).join("")}</ul>
     </div>` : ""}
     ${m.tip ? `<div class="tip">${nb(m.tip)}</div>` : ""}`;
