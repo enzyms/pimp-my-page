@@ -177,7 +177,6 @@
     visibility: hidden;
   }
   .tab.hint .ping { visibility: visible; }
-  .tabs .saved { margin-left: auto; font-size: 13px; color: var(--muted); }
   .checks .why { display: block; margin-top: 4px; font-size: 13.5px; color: var(--red-dark); }
   .checks .why[hidden] { display: none; }
 
@@ -358,7 +357,6 @@
         <button class="tab" role="tab" data-tab="page2" aria-selected="false" title="page2.html" hidden>Page 2 <small>· HTML</small><span class="ping"></span></button>
         <button class="tab" role="tab" data-tab="css" aria-selected="false">CSS <small>· le style</small><span class="ping"></span></button>
         <button class="btn small" id="btnImages" style="margin-left:auto">🖼️ Images</button>
-        <span class="saved" id="saved" style="margin-left:0">💾 sauvegardé</span>
       </div>
       <div class="code-wrap">
         <div class="gutter" id="gutter">1</div>
@@ -762,14 +760,24 @@ function updateGutter() {
 }
 Object.values(editors).forEach(ta => ta.addEventListener("scroll", () => (gutter.scrollTop = ta.scrollTop)));
 
-/* ---------- Petites aides d'édition ---------- */
+/* ---------- Petites aides d'édition ----------
+   insertText passe par execCommand : le navigateur garde la modif dans son
+   historique, donc Ctrl-Z / ⌘-Z annule aussi les tabulations, les retours
+   à la ligne indentés et les images insérées. setRangeText, lui, casse l'historique. */
+function insertText(ta, text, s = ta.selectionStart, end = ta.selectionEnd) {
+  ta.focus({ preventScroll: true });
+  ta.setSelectionRange(s, end);
+  if (!document.execCommand("insertText", false, text)) {
+    ta.setRangeText(text, s, end, "end");
+    ta.dispatchEvent(new Event("input"));
+  }
+}
 function onKey(e) {
   const ta = e.target;
   const { selectionStart: s, selectionEnd: end, value: v } = ta;
   if (e.key === "Tab") {
     e.preventDefault();
-    ta.setRangeText("  ", s, end, "end");
-    ta.dispatchEvent(new Event("input"));
+    insertText(ta, "  ", s, end);
   } else if (e.key === "Enter") {
     // garde l'indentation de la ligne
     const lineStart = v.lastIndexOf("\n", s - 1) + 1;
@@ -777,8 +785,7 @@ function onKey(e) {
     const prev = v[s - 1];
     const extra = prev === "{" || (prev === ">" && /<([a-z0-9]+)[^>]*>$/i.test(v.slice(lineStart, s)) && !/<\/|\/>$/.test(v.slice(lineStart, s))) ? "  " : "";
     e.preventDefault();
-    ta.setRangeText("\n" + indent + extra, s, end, "end");
-    ta.dispatchEvent(new Event("input"));
+    insertText(ta, "\n" + indent + extra, s, end);
   }
 }
 Object.values(editors).forEach(ta => ta.addEventListener("keydown", onKey));
@@ -862,18 +869,10 @@ function onInput(e) {
   state[key] = e.target.value;
   updateGutter();
   persist();
-  flashSaved();
   scheduleRender();
 }
 Object.values(editors).forEach(ta => ta.addEventListener("input", onInput));
 
-let savedTimer;
-function flashSaved() {
-  const s = el("saved");
-  s.textContent = "✏️ …";
-  clearTimeout(savedTimer);
-  savedTimer = setTimeout(() => (s.textContent = "💾 sauvegardé"), 600);
-}
 
 /* =========================================================
    Vérifications
@@ -1120,11 +1119,10 @@ function insertImage(src, alt) {
   const lineStart = v.lastIndexOf("\n", s - 1) + 1;
   const before = v.slice(lineStart, s);
   const text = before === "" ? "  " + tag + "\n" : /^\s*$/.test(before) ? tag + "\n" + before : "\n  " + tag;
-  ta.setRangeText(text, s, e, "end");
   el("images").classList.remove("on");
   setTab(imgTarget);
+  insertText(ta, text, s, e);
   ta.setSelectionRange(s, s + text.length);
-  ta.dispatchEvent(new Event("input"));
   htmlCaret = [ta.selectionEnd, ta.selectionEnd];
 }
 el("btnImages").addEventListener("click", () => {
