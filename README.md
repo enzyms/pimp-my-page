@@ -2,7 +2,7 @@
 
 Plateforme d'initiation HTML/CSS pour l'atelier « dev frontend » de Futur en tous genres (12.11.2026), 90 minutes, filles de 13–14 ans.
 
-Chaque participante code sa carte de profil en 10 missions guidées (validation automatique), puis l'emporte sur son natel via un QR code.
+Chaque participante code sa carte de profil en 10 missions guidées (validation automatique), puis l'emporte sur son natel via un QR code. Deux bonus pour les plus rapides : une animation, et une 2e page (`page2.html`, même CSS) reliée par des liens.
 
 ## Fonctionnement
 

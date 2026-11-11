@@ -170,6 +170,7 @@
   .tab[aria-selected="true"] { border-color: var(--ink); box-shadow: 3px 3px 0 var(--ink); }
   .tab[data-tab="html"][aria-selected="true"] { background: var(--peach); }
   .tab[data-tab="css"][aria-selected="true"] { background: var(--lilac); }
+  .tab[data-tab="page2"][aria-selected="true"] { background: var(--yellow); }
   .tab .ping {
     display: inline-block; width: 8px; height: 8px; border-radius: 50%;
     background: var(--red); margin-left: 6px; vertical-align: middle;
@@ -354,6 +355,7 @@
     <section class="panel editor">
       <div class="tabs" role="tablist">
         <button class="tab" role="tab" data-tab="html" aria-selected="true">HTML <small>· le squelette</small><span class="ping"></span></button>
+        <button class="tab" role="tab" data-tab="page2" aria-selected="false" title="page2.html" hidden>Page 2 <small>· HTML</small><span class="ping"></span></button>
         <button class="tab" role="tab" data-tab="css" aria-selected="false">CSS <small>· le style</small><span class="ping"></span></button>
         <button class="btn small" id="btnImages" style="margin-left:auto">🖼️ Images</button>
         <span class="saved" id="saved" style="margin-left:0">💾 sauvegardé</span>
@@ -361,6 +363,7 @@
       <div class="code-wrap">
         <div class="gutter" id="gutter">1</div>
         <textarea class="code" id="code-html" spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="Code HTML"></textarea>
+        <textarea class="code" id="code-page2" spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="Code HTML de la page 2" hidden></textarea>
         <textarea class="code" id="code-css" spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="Code CSS" hidden></textarea>
       </div>
     </section>
@@ -444,6 +447,27 @@ img {
   max-width: 100%;
 }
 `;
+
+const START_PAGE2 = `<!-- Ta 2e page ! Elle utilise le même CSS que la première ✨ -->
+<div class="carte">
+
+  <!-- Écris ton code entre ces deux lignes -->
+
+</div>
+`;
+
+/* =========================================================
+   Les pages du site : index.html (onglet HTML) et page2.html (onglet Page 2)
+   pageFor() traduit un href en page connue, sinon null.
+   ========================================================= */
+const pageFor = href => {
+  const h = (href || "").trim().replace(/^\.\//, "").toLowerCase();
+  if (h === "page2.html") return "page2";
+  if (h === "index.html" || h === "/") return "html";
+  return null;
+};
+const parseHtml = s => new DOMParser().parseFromString(s || "", "text/html");
+const linksTo = s => [...parseHtml(s).querySelectorAll("a[href]")].map(a => pageFor(a.getAttribute("href")));
 
 /* =========================================================
    Galerie d'images, servies par le site lui-même (dossier img/)
@@ -640,6 +664,25 @@ h1 {
     ],
   },
   {
+    emoji: "🔗", title: "Bonus : une 2e page", tab: "page2", color: "var(--yellow)", bonus: true,
+    intro: "Un site, c'est plusieurs pages reliées par des <b>liens</b>. Ta première page s'appelle <code>index.html</code> : c'est toujours le nom de la page d'accueil. Un nouvel onglet est apparu : <b>Page 2</b>, le fichier <code>page2.html</code>. Le CSS est partagé : tes deux pages auront le même style !",
+    snippet: `<!-- dans l'onglet HTML (index.html) -->
+<a href="page2.html">Mes passions →</a>
+
+<!-- dans l'onglet Page 2 (page2.html) -->
+<a href="index.html">← Retour</a>`,
+    task: "Remplis ta page 2 (un titre, une liste, une image…), puis relie tes deux pages avec des liens. Clique dessus dans l'aperçu pour voyager 👉",
+    checks: [
+      { label: "Ta page 2 a un grand titre <code>&lt;h1&gt;</code>", test: () => (parseHtml(state.page2).querySelector("h1")?.textContent.trim().length || 0) > 1 },
+      { label: "L'onglet HTML a un lien vers <code>page2.html</code>", test: () => linksTo(state.html).includes("page2")
+          || (/<a\b[^>]*page/i.test(state.html) ? "Vérifie l'adresse : il faut exactement href=\"page2.html\"" : false) },
+      { label: "La page 2 a un lien pour revenir vers <code>index.html</code>", test: () => linksTo(state.page2).includes("html")
+          || (/<a\b/i.test(state.page2 || "") ? "Vérifie l'adresse : il faut exactement href=\"index.html\"" : false) },
+      { label: "Tu as voyagé : clique sur ton lien dans l'aperçu 👉", test: () => state.visited },
+    ],
+    tip: "<b>Un seul CSS pour tout le site</b> : change la couleur de ton titre, et regarde, elle change sur les deux pages. C'est comme ça que font les vrais sites !",
+  },
+  {
     emoji: "🏁", title: "Le bac à sable", tab: "css", color: "var(--sage)", bonus: true, sandbox: true,
     intro: "Bravo, tu as tout débloqué ! 🎉 Maintenant c'est toi la dev. Quelques défis si tu veux :",
     snippet: `🔥 Mets un emoji géant derrière ta carte
@@ -664,32 +707,52 @@ const saved = store.load();
 const state = {
   html: saved?.html ?? START_HTML,
   css: saved?.css ?? START_CSS,
+  page2: saved?.page2 ?? null, // null tant que la mission « 2e page » n'est pas ouverte
+  visited: false,
   current: saved?.current ?? 0,
   done: new Set(saved?.done ?? []),
   tab: "html",
+  view: "html", // la page affichée dans l'aperçu : "html" (index.html) ou "page2"
 };
-const persist = () => store.save({ html: state.html, css: state.css, current: state.current, done: [...state.done] });
+const persist = () => store.save({ html: state.html, css: state.css, page2: state.page2, current: state.current, done: [...state.done] });
 
 /* =========================================================
    Éléments
    ========================================================= */
 const el = id => document.getElementById(id);
-const taHtml = el("code-html"), taCss = el("code-css"), gutter = el("gutter");
+const taHtml = el("code-html"), taCss = el("code-css"), taPage2 = el("code-page2"), gutter = el("gutter");
+const editors = { html: taHtml, page2: taPage2, css: taCss };
 const frame = el("preview"), stageFrame = el("stageFrame");
 taHtml.value = state.html;
 taCss.value = state.css;
+taPage2.value = state.page2 ?? "";
 
 /* ---------- Onglets ---------- */
 function setTab(tab) {
   state.tab = tab;
   document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", String(t.dataset.tab === tab)));
-  taHtml.hidden = tab !== "html";
-  taCss.hidden = tab !== "css";
+  for (const [k, ta] of Object.entries(editors)) ta.hidden = k !== tab;
   updateGutter();
   activeTa().focus({ preventScroll: true });
+  // l'aperçu suit la page HTML qu'on édite
+  if (tab !== "css" && state.view !== tab) { state.view = tab; render(); }
 }
-const activeTa = () => (state.tab === "html" ? taHtml : taCss);
+const activeTa = () => editors[state.tab];
 document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => setTab(t.dataset.tab)));
+
+/* ---------- La 2e page apparaît avec sa mission ---------- */
+function syncPage2Tab() {
+  document.querySelector('.tab[data-tab="page2"]').hidden = state.page2 === null;
+  // l'onglet HTML s'appelle index.html dès qu'il y a deux pages
+  document.querySelector('.tab[data-tab="html"] small').textContent = state.page2 === null ? "· le squelette" : "· index.html";
+}
+function ensurePage2() {
+  if (state.page2 !== null) return;
+  state.page2 = taPage2.value = START_PAGE2;
+  persist();
+  syncPage2Tab();
+}
+syncPage2Tab();
 
 /* ---------- Numéros de ligne ---------- */
 function updateGutter() {
@@ -697,7 +760,7 @@ function updateGutter() {
   gutter.textContent = Array.from({ length: n }, (_, i) => i + 1).join("\n");
   gutter.scrollTop = activeTa().scrollTop;
 }
-[taHtml, taCss].forEach(ta => ta.addEventListener("scroll", () => (gutter.scrollTop = ta.scrollTop)));
+Object.values(editors).forEach(ta => ta.addEventListener("scroll", () => (gutter.scrollTop = ta.scrollTop)));
 
 /* ---------- Petites aides d'édition ---------- */
 function onKey(e) {
@@ -718,7 +781,7 @@ function onKey(e) {
     ta.dispatchEvent(new Event("input"));
   }
 }
-[taHtml, taCss].forEach(ta => ta.addEventListener("keydown", onKey));
+Object.values(editors).forEach(ta => ta.addEventListener("keydown", onKey));
 
 /* =========================================================
    Rendu de l'aperçu
@@ -745,11 +808,46 @@ function scheduleRender() {
   clearTimeout(renderTimer);
   renderTimer = setTimeout(render, 250);
 }
+const setUrlBars = page => document.querySelectorAll(".browser .url").forEach(u => (u.textContent = "www.ma-page.ch" + (page === "page2" ? "/page2.html" : "")));
 function render() {
-  frame.srcdoc = buildDoc(state.html, state.css);
-  if (el("stage").classList.contains("on")) stageFrame.srcdoc = frame.srcdoc;
+  clearTimeout(renderTimer);
+  frame.srcdoc = buildDoc(state[state.view] ?? "", state.css);
+  setUrlBars(state.view);
+  if (el("stage").classList.contains("on") && !el("stage").classList.contains("view")) stageFrame.srcdoc = frame.srcdoc;
 }
+
+/* ---------- Les liens dans l'aperçu ----------
+   Dans un iframe srcdoc, un clic sur <a href="page2.html"> chargerait la plateforme
+   elle-même dans l'aperçu. On intercepte : les pages du site changent l'aperçu,
+   les ancres défilent, les liens externes s'ouvrent dans un nouvel onglet. */
+function hookLinks(iframe, goPage) {
+  const d = iframe.contentDocument;
+  if (!d) return;
+  d.addEventListener("click", e => {
+    const a = e.target.closest?.("a[href]");
+    if (!a) return;
+    const href = a.getAttribute("href").trim();
+    const page = pageFor(href);
+    e.preventDefault();
+    if (page) goPage(page);
+    else if (href.startsWith("#")) d.getElementById(decodeURIComponent(href.slice(1)))?.scrollIntoView({ behavior: "smooth" });
+    else if (/^(https?:|mailto:|tel:)/i.test(href)) window.open(href, "_blank", "noopener");
+    else if (/\.html?$/i.test(href)) alert(`La page « ${href} » n'existe pas dans ton site. Ton site a deux pages : index.html et page2.html.`);
+  });
+}
+// dans l'éditeur : un lien change la page affichée (et l'onglet, sauf si on est dans le CSS)
+function goPage(page) {
+  if (page === "page2" && state.page2 === null) return;
+  if (page === "page2") state.visited = true;
+  if (state.tab !== "css") setTab(page);
+  if (state.view !== page) { state.view = page; render(); }
+  else runChecks();
+}
+let stageGoPage = goPage; // remplacé en mode « vue » (lien partagé)
+stageFrame.addEventListener("load", () => hookLinks(stageFrame, p => stageGoPage(p)));
+
 frame.addEventListener("load", () => {
+  hookLinks(frame, goPage);
   // revérifie dès qu'une image finit de charger (ou échoue), même sur un wifi lent
   const d = frame.contentDocument;
   if (d) ["load", "error"].forEach(t => d.addEventListener(t, e => { if (e.target.tagName === "IMG") runChecks(); }, true));
@@ -760,15 +858,14 @@ frame.addEventListener("load", () => {
 });
 
 function onInput(e) {
-  const isHtml = e.target === taHtml;
-  if (isHtml) state.html = taHtml.value; else state.css = taCss.value;
+  const key = Object.keys(editors).find(k => editors[k] === e.target);
+  state[key] = e.target.value;
   updateGutter();
   persist();
   flashSaved();
   scheduleRender();
 }
-taHtml.addEventListener("input", onInput);
-taCss.addEventListener("input", onInput);
+Object.values(editors).forEach(ta => ta.addEventListener("input", onInput));
 
 let savedTimer;
 function flashSaved() {
@@ -853,7 +950,7 @@ function renderDots() {
 function renderMission() {
   const m = MISSIONS[state.current];
   const n = String(state.current + 1).padStart(2, "0");
-  const lang = m.tab.toUpperCase();
+  const lang = m.tab === "css" ? "CSS" : "HTML";
   el("mission").innerHTML = `
     <div class="mission-hero" style="background:${m.color}">
       <span class="emoji">${m.emoji}</span>
@@ -890,6 +987,7 @@ function renderMission() {
 
 function goTo(i) {
   state.current = Math.max(0, Math.min(MISSIONS.length - 1, i));
+  if (MISSIONS[state.current].tab === "page2") ensurePage2();
   persist();
   renderDots();
   renderMission();
@@ -927,7 +1025,7 @@ function celebrate() {
    ========================================================= */
 el("btnStage").addEventListener("click", () => {
   el("stage").classList.add("on");
-  stageFrame.srcdoc = buildDoc(state.html, state.css);
+  stageFrame.srcdoc = buildDoc(state[state.view] ?? "", state.css);
 });
 el("btnStageClose").addEventListener("click", () => el("stage").classList.remove("on"));
 document.addEventListener("keydown", e => { if (e.key === "Escape") el("stage").classList.remove("on"); });
@@ -958,7 +1056,10 @@ const lean = s => s.replace(/<!--[\s\S]*?-->/g, "").replace(/\/\*[\s\S]*?\*\//g,
 
 let shareUrl = "";
 async function openShare() {
-  const data = await pack({ h: lean(state.html), c: lean(state.css) });
+  const shared = { h: lean(state.html), c: lean(state.css) };
+  // la page 2 ne voyage que si elle contient vraiment quelque chose
+  if (state.page2 !== null && lean(state.page2) !== lean(START_PAGE2)) shared.p = lean(state.page2);
+  const data = await pack(shared);
   shareUrl = location.origin + location.pathname + "#c=" + data;
   const warn = el("shareWarn");
   const qrBox = el("qr");
@@ -986,8 +1087,12 @@ el("btnCopyLink").addEventListener("click", async () => {
 });
 
 /* ---------- Galerie : insère la balise au curseur ---------- */
-let htmlCaret = null;
-taHtml.addEventListener("blur", () => (htmlCaret = [taHtml.selectionStart, taHtml.selectionEnd]));
+// l'image va dans la dernière page HTML éditée (index.html ou page2.html)
+let htmlCaret = null, imgTarget = "html";
+[["html", taHtml], ["page2", taPage2]].forEach(([k, ta]) => ta.addEventListener("blur", () => {
+  imgTarget = k;
+  htmlCaret = [ta.selectionStart, ta.selectionEnd];
+}));
 function fillGallery(box, items) {
   box.innerHTML = "";
   items.forEach(({ alt, src }) => {
@@ -1001,7 +1106,11 @@ function fillGallery(box, items) {
 }
 function insertImage(src, alt) {
   const tag = `<img src="${src}" alt="${alt}">`;
-  const v = taHtml.value;
+  // le curseur mémorisé ne vaut que pour la page où il a été pris
+  if (state.tab !== "css" && state.tab !== imgTarget) { imgTarget = state.tab; htmlCaret = null; }
+  if (imgTarget === "page2" && state.page2 === null) { imgTarget = "html"; htmlCaret = null; }
+  const ta = editors[imgTarget];
+  const v = ta.value;
   let [s, e] = htmlCaret || [v.length, v.length];
   // pas de curseur utile ? on place l'image juste avant la fin de la carte
   if (!htmlCaret || s === 0) {
@@ -1011,12 +1120,12 @@ function insertImage(src, alt) {
   const lineStart = v.lastIndexOf("\n", s - 1) + 1;
   const before = v.slice(lineStart, s);
   const text = before === "" ? "  " + tag + "\n" : /^\s*$/.test(before) ? tag + "\n" + before : "\n  " + tag;
-  taHtml.setRangeText(text, s, e, "end");
+  ta.setRangeText(text, s, e, "end");
   el("images").classList.remove("on");
-  setTab("html");
-  taHtml.setSelectionRange(s, s + text.length);
-  taHtml.dispatchEvent(new Event("input"));
-  htmlCaret = [taHtml.selectionEnd, taHtml.selectionEnd];
+  setTab(imgTarget);
+  ta.setSelectionRange(s, s + text.length);
+  ta.dispatchEvent(new Event("input"));
+  htmlCaret = [ta.selectionEnd, ta.selectionEnd];
 }
 el("btnImages").addEventListener("click", () => {
   if (!el("galleryPhotos").children.length) {
@@ -1044,6 +1153,7 @@ if (location.hash === "#reset") {
 /* =========================================================
    Démarrage
    ========================================================= */
+if (MISSIONS[state.current].tab === "page2") ensurePage2();
 renderDots();
 renderMission();
 setTab(MISSIONS[state.current].sandbox ? "css" : MISSIONS[state.current].tab);
@@ -1051,24 +1161,36 @@ render();
 
 /* ---------- Mode « vue » : quelqu'un ouvre un lien partagé ---------- */
 if (location.hash.startsWith("#c=")) {
-  unpack(location.hash.slice(3)).then(({ h, c }) => {
+  // p = page2.html, seulement si la carte en a une
+  unpack(location.hash.slice(3)).then(({ h, c, p = null }) => {
     const stage = el("stage");
     stage.classList.add("on", "view");
-    stageFrame.srcdoc = buildDoc(h, c, "Ma carte");
+    const sharedPages = { html: h, page2: p };
+    stageGoPage = page => {
+      if (sharedPages[page] == null) return;
+      stageFrame.srcdoc = buildDoc(sharedPages[page], c, "Ma carte");
+      setUrlBars(page);
+    };
+    stageGoPage("html");
     const btn = el("btnStageClose");
     btn.textContent = "✏️ Modifier le code";
     btn.onclick = e => {
       e.stopImmediatePropagation();
-      const mine = state.html !== START_HTML || state.css !== START_CSS;
+      const mine = state.html !== START_HTML || state.css !== START_CSS || state.page2 !== null;
       if (mine && !confirm("Remplacer le code de cet appareil par celui de cette carte ?")) return;
       state.html = taHtml.value = h;
       state.css = taCss.value = c;
+      state.page2 = p;
+      taPage2.value = p ?? "";
+      syncPage2Tab();
       state.current = MISSIONS.length - 1;
       persist();
       history.replaceState(null, "", location.pathname);
       stage.classList.remove("on", "view");
       btn.textContent = "✕ Fermer";
       btn.onclick = null;
+      stageGoPage = goPage;
+      state.view = "html";
       goTo(state.current);
       render();
     };
