@@ -343,7 +343,10 @@
   .skel .link { color: var(--ink); background: var(--lilac); border-radius: 6px; padding: 1px 4px; margin: 0 -4px; }
   .editor .skel-top, .editor .skel-bottom { cursor: pointer; transition: background .15s; }
   .editor .skel:hover { background: #E3DFD9; }
-  .skel.open { animation: rise .3s cubic-bezier(.2, 1.2, .4, 1); }
+  .skel .ln { display: inline-block; }
+  .skel .sk-chev { display: inline-block; margin-right: 4px; transition: transform .2s; }
+  .skel.open .sk-chev { transform: rotate(90deg); }
+  .skel .sk-word { display: inline-block; }
   .skel .sk-toggle {
     position: absolute; top: 7px; right: 10px;
     font-family: var(--font); font-size: 11.5px; font-weight: 600; color: var(--muted);
@@ -932,7 +935,9 @@ const LINK = `<span class="link">${esc('<link rel="stylesheet" href="style.css">
 // replié au départ (une seule ligne), on le déplie pour voir d'où vient le CSS
 let skelOpen = false;
 try { skelOpen = localStorage.getItem(KEY + ":skel") === "1"; } catch {}
-const TOGGLE = () => `<span class="sk-toggle">${skelOpen ? "▾ réduire" : "▸ tout voir"}</span>`;
+// un seul chevron qui tourne d'un quart de tour, et le mot qui change
+const TOGGLE = () => `<span class="sk-toggle"><span class="sk-chev">▸</span><span class="sk-word">${skelOpen ? "réduire" : "tout voir"}</span></span>`;
+const lines = list => list.map(l => `<span class="ln">${l}</span>`).join("\n");
 function renderSkeleton(tab) {
   const top = el("skelTop"), bottom = el("skelBottom");
   top.classList.toggle("open", skelOpen);
@@ -944,14 +949,29 @@ function renderSkeleton(tab) {
     return;
   }
   top.innerHTML = (skelOpen
-    ? [esc("<!doctype html>"), esc("<html>"), esc("<head>"), "  " + LINK, esc("</head>"), esc("<body>")].join("\n")
-    : esc("<html><head>") + "…" + esc("</head><body>")) + TOGGLE();
-  bottom.innerHTML = skelOpen ? esc("</body>\n</html>") : esc("</body></html>");
+    ? lines([esc("<!doctype html>"), esc("<html>"), esc("<head>"), "  " + LINK, esc("</head>"), esc("<body>")])
+    : lines([esc("<html><head>") + "…" + esc("</head><body>")])) + TOGGLE();
+  bottom.innerHTML = skelOpen ? lines([esc("</body>"), esc("</html>")]) : lines([esc("</body></html>")]);
 }
 function toggleSkeleton() {
+  const boxes = [el("skelTop"), el("skelBottom")];
+  const before = boxes.map(b => b.offsetHeight);
   skelOpen = !skelOpen;
   try { localStorage.setItem(KEY + ":skel", skelOpen ? "1" : ""); } catch {}
   renderSkeleton(state.tab);
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  // la boîte grandit (ou rétrécit) en douceur depuis sa hauteur d'avant…
+  const ease = "cubic-bezier(.2, .9, .3, 1)";
+  boxes.forEach((b, i) => b.animate([{ height: before[i] + "px" }, { height: b.offsetHeight + "px" }], { duration: 380, easing: ease }));
+  // …les lignes arrivent l'une après l'autre…
+  boxes.forEach(b => b.querySelectorAll(".ln").forEach((ln, n) => ln.animate(
+    [{ opacity: 0, transform: `translateY(${skelOpen ? -6 : 6}px)` }, { opacity: 1, transform: "none" }],
+    { duration: 300, delay: 40 + n * 35, easing: ease, fill: "backwards" })));
+  // …et le chevron fait son quart de tour avec un petit rebond
+  const chev = el("skelTop").querySelector(".sk-chev");
+  chev?.animate([{ transform: `rotate(${skelOpen ? 0 : 90}deg)` }, { transform: `rotate(${skelOpen ? 90 : 0}deg)` }],
+    { duration: 420, easing: "cubic-bezier(.3, 1.8, .5, 1)" });
+  el("skelTop").querySelector(".sk-word")?.animate([{ opacity: 0, transform: "translateX(-4px)" }, { opacity: 1, transform: "none" }], { duration: 250, easing: ease });
 }
 ["skelTop", "skelBottom"].forEach(id => el(id).addEventListener("click", () => state.tab !== "css" && toggleSkeleton()));
 document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => setTab(t.dataset.tab)));
