@@ -341,7 +341,16 @@
   .skel-top { border-bottom: 1px dashed #CFC9C1; padding-top: 10px; }
   .skel-bottom { border-top: 1px dashed #CFC9C1; padding-bottom: 10px; }
   .skel .link { color: var(--ink); background: var(--lilac); border-radius: 6px; padding: 1px 4px; margin: 0 -4px; }
-  .skel .lock { position: absolute; top: 9px; right: 12px; font-family: var(--font); font-size: 11.5px; font-weight: 600; }
+  .editor .skel-top, .editor .skel-bottom { cursor: pointer; transition: background .15s; }
+  .editor .skel:hover { background: #E3DFD9; }
+  .skel.open { animation: rise .3s cubic-bezier(.2, 1.2, .4, 1); }
+  .skel .sk-toggle {
+    position: absolute; top: 7px; right: 10px;
+    font-family: var(--font); font-size: 11.5px; font-weight: 600; color: var(--muted);
+    background: var(--paper); border-radius: 999px; padding: 2px 9px;
+    transition: color .15s, transform .2s cubic-bezier(.3, 1.8, .5, 1);
+  }
+  .skel:hover .sk-toggle { color: var(--ink); transform: scale(1.05); }
 
   /* ---------- Preview (browser window) ---------- */
   /* l'aperçu n'a pas de boîte blanche : le faux navigateur suffit
@@ -517,7 +526,7 @@
       <div class="tabs" role="tablist">
         <button class="tab" role="tab" data-tab="html" aria-selected="true" title="index.html"><span>HTML<span class="ping"></span></span><small>page 1</small></button>
         <button class="tab" role="tab" data-tab="page2" aria-selected="false" title="page2.html" hidden><span>HTML<span class="ping"></span></span><small>page 2</small></button>
-        <button class="tab" role="tab" data-tab="css" aria-selected="false" title="style.css"><span>CSS<span class="ping"></span></span><small>le style</small></button>
+        <button class="tab" role="tab" data-tab="css" aria-selected="false" title="style.css"><span>CSS<span class="ping"></span></span><small>style.css</small></button>
         <button class="btn img-btn" id="btnImages" title="Ajouter une image"><span class="ico">🖼️</span><small>Images</small></button>
       </div>
       <div class="code-wrap">
@@ -593,9 +602,7 @@ const START_HTML = `<div class="carte">
 </div>
 `;
 
-const START_CSS = `/* Ici, on décore ✨ */
-
-body {
+const START_CSS = `body {
   font-family: sans-serif;
 }
 
@@ -841,7 +848,7 @@ h1 {
   },
   {
     emoji: "🔗", title: "Bonus : une 2e page", tab: "page2", color: "var(--yellow)", bonus: true,
-    intro: "Un site, c'est plusieurs pages reliées par des <b>liens</b>. Ta page 1 s'appelle <code>index.html</code> : c'est toujours le nom de la page d'accueil. Un nouvel onglet est apparu : <b>HTML page 2</b>, le fichier <code>page2.html</code>. Regarde la ligne <code>&lt;link&gt;</code> en gris en haut de chaque page : les deux chargent le même <code>style.css</code>. Elles auront donc le même style !",
+    intro: "Un site, c'est plusieurs pages reliées par des <b>liens</b>. Ta page 1 s'appelle <code>index.html</code> : c'est toujours le nom de la page d'accueil. Un nouvel onglet est apparu : <b>HTML page 2</b>, le fichier <code>page2.html</code>. Clique sur <b>▸ tout voir</b> en haut de chaque page : la ligne <code>&lt;link&gt;</code> montre que les deux chargent le même <code>style.css</code>. Elles auront donc le même style !",
     snippet: `<!-- dans l'onglet page 1 (index.html) -->
 <a href="page2.html">Mes passions →</a>
 
@@ -921,20 +928,32 @@ const activeTa = () => editors[state.tab];
    sans pouvoir les modifier : on voit où va son code, et que chaque page
    charge le même style.css avec <link>. */
 const esc = t => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-const LOCK = `<span class="lock">🔒 déjà écrit pour toi</span>`;
 const LINK = `<span class="link">${esc('<link rel="stylesheet" href="style.css">')}</span>`;
+// replié au départ (une seule ligne), on le déplie pour voir d'où vient le CSS
+let skelOpen = false;
+try { skelOpen = localStorage.getItem(KEY + ":skel") === "1"; } catch {}
+const TOGGLE = () => `<span class="sk-toggle">${skelOpen ? "▾ réduire" : "▸ tout voir"}</span>`;
 function renderSkeleton(tab) {
-  // caché pendant les missions de base : on ne le découvre qu'avec le bonus « 2e page »
-  if (!page2On()) { el("skelTop").innerHTML = el("skelBottom").innerHTML = ""; return; }
+  const top = el("skelTop"), bottom = el("skelBottom");
+  top.classList.toggle("open", skelOpen);
+  bottom.classList.toggle("open", skelOpen);
   if (tab === "css") {
-    // ligne courte, sans cadenas : elle doit tenir sur un écran de laptop
-    el("skelTop").innerHTML = esc("/* style.css · pour la page 1 et la page 2 */");
-    el("skelBottom").innerHTML = "";
+    // ligne courte : elle doit tenir sur un écran de laptop
+    top.innerHTML = esc(`/* style.css · pour ${page2On() ? "la page 1 et la page 2" : "ta page"} */`);
+    bottom.innerHTML = "";
     return;
   }
-  el("skelTop").innerHTML = [esc("<!doctype html>"), esc("<html>"), esc("<head>"), "  " + LINK, esc("</head>"), esc("<body>")].join("\n") + LOCK;
-  el("skelBottom").innerHTML = esc("</body>\n</html>");
+  top.innerHTML = (skelOpen
+    ? [esc("<!doctype html>"), esc("<html>"), esc("<head>"), "  " + LINK, esc("</head>"), esc("<body>")].join("\n")
+    : esc("<html><head>") + "…" + esc("</head><body>")) + TOGGLE();
+  bottom.innerHTML = skelOpen ? esc("</body>\n</html>") : esc("</body></html>");
 }
+function toggleSkeleton() {
+  skelOpen = !skelOpen;
+  try { localStorage.setItem(KEY + ":skel", skelOpen ? "1" : ""); } catch {}
+  renderSkeleton(state.tab);
+}
+["skelTop", "skelBottom"].forEach(id => el(id).addEventListener("click", () => state.tab !== "css" && toggleSkeleton()));
 document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => setTab(t.dataset.tab)));
 
 /* ---------- La 2e page apparaît avec sa mission ---------- */
@@ -946,8 +965,6 @@ function syncPage2Tab() {
   const two = page2On();
   if (!two && state.tab === "page2") setTab("html");
   document.querySelector('.tab[data-tab="page2"]').hidden = !two;
-  // le nom de fichier n'apparaît qu'avec le bonus, comme le squelette
-  document.querySelector('.tab[data-tab="css"] small').textContent = two ? "style.css" : "le style";
   renderSkeleton(state.tab);
 }
 function ensurePage2() {
