@@ -159,14 +159,17 @@
   /* ---------- Editor ---------- */
   .editor { gap: 12px; }
   .tabs { display: flex; gap: 8px; align-items: center; }
+  /* onglets sur deux lignes : le langage, puis le fichier */
   .tab {
+    display: flex; flex-direction: column; align-items: flex-start;
     border: 2px solid transparent;
-    border-radius: 999px;
-    padding: 7px 16px;
+    border-radius: 16px;
+    padding: 5px 14px 6px;
     font-weight: 700;
+    line-height: 1.15;
     background: var(--soft);
   }
-  .tab small { font-weight: 500; opacity: .7; }
+  .tab small { font-size: 11.5px; font-weight: 500; opacity: .7; }
   .tab[aria-selected="true"] { border-color: var(--ink); box-shadow: 3px 3px 0 var(--ink); }
   .tab[data-tab="html"][aria-selected="true"] { background: var(--peach); }
   .tab[data-tab="css"][aria-selected="true"] { background: var(--lilac); }
@@ -319,7 +322,7 @@
 
   .brand strong, .tab { white-space: nowrap; }
   @media (max-width: 1500px) {
-    .brand .kicker, .tab small, .preview-head .kicker { display: none; }
+    .brand .kicker, .preview-head .kicker { display: none; }
     .dot { width: 30px; height: 30px; font-size: 12px; }
     .dots { gap: 5px; flex-wrap: nowrap; }
   }
@@ -353,9 +356,9 @@
 
     <section class="panel editor">
       <div class="tabs" role="tablist">
-        <button class="tab" role="tab" data-tab="html" aria-selected="true">HTML <small>· le squelette</small><span class="ping"></span></button>
-        <button class="tab" role="tab" data-tab="page2" aria-selected="false" title="page2.html" hidden>Page 2 <small>· HTML</small><span class="ping"></span></button>
-        <button class="tab" role="tab" data-tab="css" aria-selected="false">CSS <small>· le style</small><span class="ping"></span></button>
+        <button class="tab" role="tab" data-tab="html" aria-selected="true" title="index.html"><span>HTML<span class="ping"></span></span><small>page 1</small></button>
+        <button class="tab" role="tab" data-tab="page2" aria-selected="false" title="page2.html" hidden><span>HTML<span class="ping"></span></span><small>page 2</small></button>
+        <button class="tab" role="tab" data-tab="css" aria-selected="false"><span>CSS<span class="ping"></span></span><small>le style</small></button>
         <button class="btn small" id="btnImages" style="margin-left:auto">🖼️ Images</button>
       </div>
       <div class="code-wrap">
@@ -455,7 +458,7 @@ const START_PAGE2 = `<!-- Ta 2e page ! Elle utilise le même CSS que la premièr
 `;
 
 /* =========================================================
-   Les pages du site : index.html (onglet HTML) et page2.html (onglet Page 2)
+   Les pages du site : index.html (onglet page 1) et page2.html (onglet page 2)
    pageFor() traduit un href en page connue, sinon null.
    ========================================================= */
 const pageFor = href => {
@@ -663,16 +666,16 @@ h1 {
   },
   {
     emoji: "🔗", title: "Bonus : une 2e page", tab: "page2", color: "var(--yellow)", bonus: true,
-    intro: "Un site, c'est plusieurs pages reliées par des <b>liens</b>. Ta première page s'appelle <code>index.html</code> : c'est toujours le nom de la page d'accueil. Un nouvel onglet est apparu : <b>Page 2</b>, le fichier <code>page2.html</code>. Le CSS est partagé : tes deux pages auront le même style !",
-    snippet: `<!-- dans l'onglet HTML (index.html) -->
+    intro: "Un site, c'est plusieurs pages reliées par des <b>liens</b>. Ta page 1 s'appelle <code>index.html</code> : c'est toujours le nom de la page d'accueil. Un nouvel onglet est apparu : <b>HTML page 2</b>, le fichier <code>page2.html</code>. Le CSS est partagé : tes deux pages auront le même style !",
+    snippet: `<!-- dans l'onglet page 1 (index.html) -->
 <a href="page2.html">Mes passions →</a>
 
-<!-- dans l'onglet Page 2 (page2.html) -->
+<!-- dans l'onglet page 2 (page2.html) -->
 <a href="index.html">← Retour</a>`,
     task: "Remplis ta page 2 (un titre, une liste, une image…), puis relie tes deux pages avec des liens. Clique dessus dans l'aperçu pour voyager 👉",
     checks: [
       { label: "Ta page 2 a un grand titre <code>&lt;h1&gt;</code>", test: () => (parseHtml(state.page2).querySelector("h1")?.textContent.trim().length || 0) > 1 },
-      { label: "L'onglet HTML a un lien vers <code>page2.html</code>", test: () => linksTo(state.html).includes("page2")
+      { label: "La page 1 a un lien vers <code>page2.html</code>", test: () => linksTo(state.html).includes("page2")
           || (/<a\b[^>]*page/i.test(state.html) ? "Vérifie l'adresse : il faut exactement href=\"page2.html\"" : false) },
       { label: "La page 2 a un lien pour revenir vers <code>index.html</code>", test: () => linksTo(state.page2).includes("html")
           || (/<a\b/i.test(state.page2 || "") ? "Vérifie l'adresse : il faut exactement href=\"index.html\"" : false) },
@@ -741,8 +744,6 @@ document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () =>
 /* ---------- La 2e page apparaît avec sa mission ---------- */
 function syncPage2Tab() {
   document.querySelector('.tab[data-tab="page2"]').hidden = state.page2 === null;
-  // l'onglet HTML s'appelle index.html dès qu'il y a deux pages
-  document.querySelector('.tab[data-tab="html"] small').textContent = state.page2 === null ? "· le squelette" : "· index.html";
 }
 function ensurePage2() {
   if (state.page2 !== null) return;
