@@ -220,6 +220,17 @@
   }
   .checks li .ico { flex: none; width: 22px; text-align: center; }
   .checks li.ok { background: var(--sage); }
+  /* marche à suivre numérotée (ex. copier l'adresse d'un site) */
+  .steps { list-style: none; counter-reset: step; margin: -8px 0 0; padding: 0; display: grid; gap: 8px; }
+  .steps li { counter-increment: step; position: relative; padding-left: 34px; font-size: 15px; line-height: 1.5; text-wrap: pretty; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 0;
+    width: 24px; height: 24px; border-radius: 50%; background: var(--peach);
+    font-size: 13px; font-weight: 700; display: grid; place-items: center;
+  }
+  .steps .keys { white-space: nowrap; }
+  .steps code, .steps kbd { font-family: var(--mono); font-size: .85em; background: var(--soft); padding: 1px 6px; border-radius: 6px; white-space: nowrap; }
+  .steps kbd { background: var(--paper); box-shadow: inset 0 0 0 1px var(--soft), 0 2px 0 var(--soft); }
   .tip { background: var(--blue); border-radius: var(--radius-m); padding: 14px 16px; font-size: 14px; line-height: 1.5; text-wrap: pretty; }
   .tip b { display: block; margin-bottom: 2px; }
   details.help summary { cursor: pointer; font-weight: 700; color: var(--red); list-style: none; }
@@ -694,6 +705,9 @@ GALLERY.push({ label: "Stickers", emoji: "✨", stickers: true, items: STICKERS 
    Missions
    Chaque check reçoit { $, $$, cs, px, doc, html, css, rules }
    ========================================================= */
+// raccourci clavier adapté au laptop : ⌘ sur Mac, ctrl ailleurs
+const MOD = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent) ? "⌘" : "ctrl";
+const keys = k => `<span class="keys"><kbd>${MOD}</kbd> + <kbd>${k}</kbd></span>`;
 const MISSIONS = [
   {
     emoji: "👋", title: "C’est parti !", tab: "html", color: "var(--peach)",
@@ -731,12 +745,10 @@ const MISSIONS = [
     ],
   },
   {
-    emoji: "🖼️", title: "Une image et un lien", tab: "html", color: "var(--peach)",
-    intro: "Certaines balises ont des <b>attributs</b> : des infos en plus. <code>src</code> dit où trouver l'image, <code>href</code> dit où mène le lien. <code>&lt;img&gt;</code> n'a pas de balise fermante.",
-    snippet: `<img src="${GALLERY[0].items[0].src}" alt="Un chat">
-
-<a href="https://www.youtube.com">Ma chaîne préférée</a>`,
-    task: "Ajoute une <b>image</b> et un <b>lien</b> vers un site que tu aimes. Pour choisir une image, clique sur <b>🖼️ Images</b> au-dessus de ton code : elle s'ajoute là où se trouve ton curseur.",
+    emoji: "🖼️", title: "Ajoute une image", tab: "html", color: "var(--peach)",
+    intro: "Certaines balises ont des <b>attributs</b> : des infos en plus. <code>src</code> dit où trouver l'image. <code>&lt;img&gt;</code> n'a pas de balise fermante.",
+    snippet: `<img src="${GALLERY[0].items[0].src}" alt="Un chat">`,
+    task: "Ajoute une <b>image</b> dans ta carte. Pour la choisir, clique sur <b>Images</b> au-dessus de ton code : elle s'ajoute là où se trouve ton curseur.",
     checks: [
       { label: "Il y a une <code>&lt;img&gt;</code> avec un <code>src</code>", test: ({ $ }) => !!$(".carte img[src]:not([src=''])") },
       { label: "L'image s'affiche", test: ({ $$ }) => {
@@ -744,11 +756,29 @@ const MISSIONS = [
           if (!imgs.length) return false;
           if (imgs.some(i => i.complete && i.naturalWidth > 0)) return true;
           if (imgs.some(i => !i.complete)) return "⏳ L'image est en train de charger…";
-          return "😕 Cette adresse ne donne pas d'image. Certains sites bloquent leurs images, ou l'adresse n'est pas celle d'une image. Prends-en une dans 🖼️ Images.";
+          return "😕 Cette adresse ne donne pas d'image. Certains sites bloquent leurs images, ou l'adresse n'est pas celle d'une image. Prends-en une dans Images.";
         } },
-      { label: "Il y a un lien <code>&lt;a href=…&gt;</code>", test: ({ $ }) => !!$(".carte a[href]:not([href=''])") },
     ],
     tip: "<b>Une image trouvée sur internet ?</b> Clic droit sur l'image → « Copier l'adresse de l'image », puis colle-la entre les guillemets de <code>src=\"…\"</code>. Attention : beaucoup de sites (Instagram, Pinterest…) <b>bloquent</b> leurs images. Si ça ne marche pas, ce n'est pas ta faute !",
+  },
+  {
+    emoji: "🌐", title: "Ajoute un lien", tab: "html", color: "var(--peach)",
+    intro: "La balise <code>&lt;a&gt;</code> crée un <b>lien</b>. Son attribut <code>href</code> dit où il mène : l'<b>adresse</b> d'un site, celle qu'on voit tout en haut du navigateur.",
+    snippet: `<a href="https://www.youtube.com">Ma chaîne préférée</a>`,
+    task: "Ajoute un lien vers un site que <b>tu</b> aimes. Pour trouver son adresse :",
+    steps: [
+      `Ouvre un <b>nouvel onglet</b> : ${keys("T")}.`,
+      "Va sur ton site préféré : une chaîne YouTube, ton club, un jeu…",
+      `Clique dans la <b>barre d'adresse</b>, tout en haut : l'adresse se surligne. Copie-la : ${keys("C")}.`,
+      "Reviens ici : clique sur l'onglet <b>Pimp My Page</b>, tout en haut de la fenêtre.",
+      `Colle l'adresse entre les guillemets de <code>href="…"</code> : ${keys("V")}.`,
+    ],
+    checks: [
+      { label: "Il y a un lien <code>&lt;a href=…&gt;</code>", test: ({ $ }) => !!$(".carte a[href]:not([href=''])") },
+      { label: "Il mène vers un site (<code>https://…</code>)", test: ({ $$ }) => $$(".carte a[href]").some(a => /^https?:\/\/\S+\.\S+/i.test(a.getAttribute("href").trim())) },
+      { label: "On peut cliquer sur un texte", test: ({ $$ }) => $$(".carte a[href]").some(a => a.textContent.trim().length > 0 || !!a.querySelector("img")) },
+    ],
+    tip: "<b>Teste-le !</b> Clique sur ton lien dans la page à droite : ton site s'ouvre dans un nouvel onglet. Pour revenir, clique sur l'onglet <b>Pimp My Page</b>.",
   },
   {
     emoji: "🎨", title: "Mets de la couleur", tab: "css", color: "var(--lilac)",
@@ -1240,6 +1270,7 @@ function renderMission() {
       <div class="snippet"><button class="copy" id="btnCopy" aria-label="Copier l'exemple">copier</button><span id="snip"></span></div>
     </div>
     <p class="intro"><b>À toi&nbsp;:</b> ${nb(m.task)}</p>
+    ${m.steps ? `<ol class="steps">${m.steps.map(t => `<li>${nb(t)}</li>`).join("")}</ol>` : ""}
     ${m.checks.length ? `<div>
       <div class="label">Tes missions</div>
       <ul class="checks" id="checks">${m.checks.map(c => `<li><span class="ico">⬜</span><span>${c.label}<span class="why" hidden></span></span></li>`).join("")}</ul>
