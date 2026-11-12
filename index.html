@@ -192,19 +192,22 @@
     position: relative;
     background: var(--soft);
     border-radius: var(--radius-m);
-    padding: 12px 44px 12px 14px;
+    padding: 12px 14px 38px; /* place en bas pour le bouton « copier » */
     font-family: var(--mono);
     font-size: 13px;
     line-height: 1.6;
     white-space: pre-wrap;
     word-break: break-word;
   }
+  /* même pastille que « tout voir » */
   .snippet .copy {
-    position: absolute; top: 6px; right: 6px;
-    width: 30px; height: 30px; padding: 0; border-radius: 10px;
-    background: transparent; font-size: 15px;
+    position: absolute; bottom: 8px; right: 10px;
+    font-family: var(--font); font-size: 11.5px; font-weight: 600; color: var(--muted);
+    background: var(--paper); border: 0; border-radius: 999px; padding: 2px 9px;
+    transition: color .15s, transform .2s cubic-bezier(.3, 1.8, .5, 1);
   }
-  .snippet .copy:hover { background: var(--paper); }
+  .snippet .copy:hover { color: var(--ink); transform: scale(1.05); }
+  .snippet .copy.done { color: var(--ink); background: var(--sage); }
   .label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 8px; }
   .checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
   .checks li {
@@ -1220,7 +1223,7 @@ function renderMission() {
     <p class="intro">${nb(m.intro)}</p>
     <div>
       <div class="label">${m.sandbox ? "Défis" : "Exemple"}</div>
-      <div class="snippet"><button class="btn copy" id="btnCopy" title="Copier" aria-label="Copier l'exemple">📋</button><span id="snip"></span></div>
+      <div class="snippet"><button class="copy" id="btnCopy" aria-label="Copier l'exemple">copier</button><span id="snip"></span></div>
     </div>
     <p class="intro"><b>À toi&nbsp;:</b> ${nb(m.task)}</p>
     ${m.checks.length ? `<div>
@@ -1240,9 +1243,10 @@ function renderMission() {
   box.classList.add("enter");
   el("snip").textContent = m.snippet;
   el("btnCopy").addEventListener("click", async () => {
-    try { await navigator.clipboard.writeText(m.snippet); el("btnCopy").textContent = "✓"; }
-    catch { el("btnCopy").title = "Sélectionne le texte et copie-le"; }
-    setTimeout(() => (el("btnCopy").textContent = "📋"), 1400);
+    const b = el("btnCopy");
+    try { await navigator.clipboard.writeText(m.snippet); b.textContent = "✓ copié"; b.classList.add("done"); }
+    catch { b.textContent = "sélectionne et copie"; }
+    setTimeout(() => { if (!b.isConnected) return; b.textContent = "copier"; b.classList.remove("done"); }, 1400);
   });
   el("btnPrev")?.addEventListener("click", () => goTo(state.current - 1));
   el("btnNext")?.addEventListener("click", () => goTo(state.current + 1));
