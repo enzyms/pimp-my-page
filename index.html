@@ -431,6 +431,9 @@
   .stage.on { display: flex; }
   .stage .browser { box-shadow: 10px 10px 0 var(--ink); }
   .stage .close { position: absolute; top: 14px; right: 18px; z-index: 2; }
+  /* « En grand » : le bouton Fermer en rouge, bien visible */
+  .stage:not(.view) .close { background: var(--red); color: #fff; box-shadow: 3px 3px 0 var(--ink); }
+  .stage:not(.view) .close:hover { background: var(--red-dark); }
 
   /* lien partagé ouvert sur le natel : la page seule, plein écran, sans faux navigateur */
   .stage.view { padding: 0; background: #fff; }
